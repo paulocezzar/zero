@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from . import spending
-from .models import BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, Snapshot
+from .models import BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
 
 
 class LedgerTests(TestCase):
@@ -243,3 +243,36 @@ class MomentumTests(TestCase):
         self.assertIn("SUMMARY:£1400.00 Rent", body)
         self.assertIn("TRIGGER:-P1D", body)
         self.assertEqual(self.client.get(reverse("calendar_feed", args=["nope"])).status_code, 404)
+
+
+class PlanAndSettleTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("p", password="x" * 12)
+        self.card = Debt.objects.create(owner=self.user, name="Card", kind="card", balance=Decimal("6000"), monthly=Decimal("250"), apr=Decimal("27.9"), promo_until=date.today().replace(day=1) + timedelta(days=800), priority=0)
+        self.col = Debt.objects.create(owner=self.user, name="Collector", kind="collector", balance=Decimal("1000"), monthly=Decimal("25"), priority=1)
+        self.client.force_login(self.user)
+
+    def test_promo_means_no_interest_until_date(self):
+        from tracker import projection
+        r = projection.simulate([self.card], start=date.today().replace(day=1), planned=False)
+        self.assertEqual(r.debts[0].interest, Decimal("0"))  # 6000/250 = 24 months, inside the promo
+        self.assertEqual(self.card.monthly_interest, Decimal("0.00"))
+        self.assertTrue(self.card.in_promo)
+
+    def test_strategy_and_lump(self):
+        r = self.client.get(reverse("projection"), {"extra": "100", "extra_from": date.today().replace(day=1), "strategy": "snowball", "lump": "500"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([d.name for d in r.context["order"]], ["Collector", "Card"])
+        self.assertEqual(r.context["order"][0].balance, Decimal("500"))  # lump taken off the first in order
+        self.col.refresh_from_db(); self.assertEqual(self.col.balance, Decimal("1000"))  # not saved
+
+    def test_settle_page_and_paid_closes(self):
+        r = self.client.get(reverse("settle"))
+        self.assertContains(r, "Collector")
+        self.assertEqual(r.context["cards"][0]["tiers"][1]["amount"], Decimal("400"))
+        r = self.client.post(reverse("settle"), {"debt": self.col.pk, "date": date.today(), "amount": "400", "status": "paid", "note": "ref 123"})
+        self.assertRedirects(r, reverse("settle"))
+        self.col.refresh_from_db()
+        self.assertTrue(self.col.closed); self.assertEqual(self.col.balance, Decimal("0"))
+        self.assertEqual(Payment.objects.get(debt=self.col).amount, Decimal("400"))
+        self.assertEqual(SettlementOffer.objects.count(), 1)

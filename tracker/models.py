@@ -21,6 +21,7 @@ class Debt(models.Model):
     starting_balance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="What it was when you started paying it down; for the progress rail")
     monthly = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     apr = models.DecimalField("APR %", max_digits=5, decimal_places=2, default=0)
+    promo_until = models.DateField("0% until", null=True, blank=True, help_text="For a balance-transfer deal: no interest before this date, the APR above after it")
     pay_day = models.PositiveSmallIntegerField(default=1)
     priority = models.PositiveSmallIntegerField(default=99)
     note = models.CharField(max_length=200, blank=True)
@@ -54,8 +55,13 @@ class Debt(models.Model):
         return int(-(-self.balance // self.monthly))
 
     @property
+    def in_promo(self):
+        from datetime import date
+        return bool(self.promo_until and self.promo_until > date.today())
+
+    @property
     def monthly_interest(self):
-        if self.apr and self.balance > 0:
+        if self.apr and self.balance > 0 and not self.in_promo:
             return (self.balance * self.apr / Decimal(100) / 12).quantize(Decimal("0.01"))
         return Decimal("0.00")
 
@@ -166,3 +172,20 @@ class CalendarToken(models.Model):
     def reset(self):
         self.token = _token()
         self.save(update_fields=["token"])
+
+
+class SettlementOffer(models.Model):
+    """A full-and-final settlement offer made to a collector, and what came back."""
+    STATUS = [("planned", "Planned"), ("offered", "Offered"), ("accepted", "Accepted"), ("rejected", "Rejected"), ("paid", "Paid & closed")]
+    debt = models.ForeignKey(Debt, on_delete=models.CASCADE, related_name="offers")
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=9, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS, default="planned")
+    note = models.CharField(max_length=200, blank=True, help_text="Who you spoke to, reference, what they said")
+
+    class Meta:
+        ordering = ["-date", "-id"]
+
+    @property
+    def pct(self):
+        return int(self.amount / self.debt.balance * 100) if self.debt.balance > 0 else 0

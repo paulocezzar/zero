@@ -26,6 +26,8 @@ urlpatterns = [
     path("budget/", views.budget_list, name="budget"),
     path("budget/<int:pk>/delete/", views.budget_delete, name="budget_delete"),
     path("projection/", views.projection_view, name="projection"),
+    path("settle/", views.settle, name="settle"),
+    path("settle/<int:pk>/delete/", views.offer_delete, name="offer_delete"),
     path("manifest.json", login_not_required(views.manifest), name="manifest"),
     path("icon.svg", login_not_required(TemplateView.as_view(template_name="tracker/icon.svg", content_type="image/svg+xml")), name="icon"),
     path("sw.js", login_not_required(TemplateView.as_view(template_name="tracker/sw.js", content_type="application/javascript")), name="sw"),

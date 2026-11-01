@@ -61,8 +61,8 @@
 <div class="list">
 {% for d in debts %}{% if d.balance > 0 %}
   <div class="debt">
-    <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ forloop.counter }}. {{ d.name }}{% if d.apr %} <span class="tag int">interest</span>{% endif %}</a><div class="bal">{{ d.balance|gbp }}</div></div>
-    <div class="rail {% if d.apr %}bad{% endif %}"><i style="width: {{ d.progress }}%"></i></div>
+    <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ forloop.counter }}. {{ d.name }}{% if d.in_promo %} <span class="tag">0% to {{ d.promo_until|date:"M y" }}</span>{% elif d.apr %} <span class="tag int">interest</span>{% endif %}</a><div class="bal">{{ d.balance|gbp }}</div></div>
+    <div class="rail {% if d.apr and not d.in_promo %}bad{% endif %}"><i style="width: {{ d.progress }}%"></i></div>
     <div class="foot"><div class="pct">{{ d.progress }}% paid · {{ d.monthly|gbp }}/mo</div>
       <div class="pct">{% with c=plan_clear|get_item:d.pk a=asis_clear|get_item:d.pk %}{% if a and c and a != c %}<s class="muted">{{ a|date:"M Y" }}</s> → <strong>{{ c|date:"M Y" }}</strong>{% elif c %}clear {{ c|date:"M Y" }}{% elif a %}clear {{ a|date:"M Y" }}{% else %}15+ yrs as is{% endif %}{% endwith %}</div></div>
   </div>

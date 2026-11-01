@@ -12,8 +12,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from . import projection, spending
-from .forms import BudgetLineForm, DebtForm, ImportForm, MonthForm, OutgoingForm, PaymentForm, ProjectionForm, SignupForm
-from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, Snapshot
+from .forms import BudgetLineForm, DebtForm, ImportForm, MonthForm, OfferForm, OutgoingForm, PaymentForm, ProjectionForm, SignupForm
+from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
 
 ZERO = Decimal("0")
 
@@ -151,7 +151,7 @@ def overview(request):
         if diff <= 14:
             bills.append((diff, b))
     bills.sort(key=lambda x: x[0])
-    interest_debts = [d for d in debts if d.apr > 0 and d.balance > 0]
+    interest_debts = [d for d in debts if d.apr > 0 and d.balance > 0 and not d.in_promo]
     first = _first_of_month()
     plan = plan_for(debts)
     asis = projection.simulate(debts, start=first, planned=False)
@@ -327,18 +327,31 @@ def budget_delete(request, pk):
 
 def projection_view(request):
     start = _first_of_month()
-    form = ProjectionForm(request.GET or None, initial={"extra": 250, "extra_from": projection.add_months(start, 4)})
-    extra, extra_from = Decimal("250"), projection.add_months(start, 4)
+    form = ProjectionForm(request.GET or None, initial={"extra": 250, "extra_from": projection.add_months(start, 4), "strategy": "mine", "lump": 0})
+    extra, extra_from, strategy, lump = Decimal("250"), projection.add_months(start, 4), "mine", ZERO
     if form.is_valid():
         extra, extra_from = form.cleaned_data["extra"], form.cleaned_data["extra_from"]
+        strategy = form.cleaned_data.get("strategy") or "mine"
+        lump = form.cleaned_data.get("lump") or ZERO
     debts = list(open_debts(request.user))
     base = projection.simulate(debts, start=start, planned=False)
-    plan = projection.simulate(debts, start=start, extra=extra, extra_from=extra_from)
+    ordered = projection.order(debts, strategy)
+    if lump > 0:
+        # a lump sum now goes down the order like extra money would
+        pot = lump
+        for d in ordered:
+            take = min(pot, d.balance)
+            d.balance -= take
+            pot -= take
+            if pot <= 0:
+                break
+    plan = projection.simulate(ordered, start=start, extra=extra, extra_from=extra_from)
+    mine = projection.simulate(projection.order(debts, "mine"), start=start, extra=extra, extra_from=extra_from) if strategy != "mine" else plan
     rows = []
-    for s in plan.debts:
-        b = next(x for x in base.debts if x.debt_id == s.debt_id)
-        if s.start > 0:
-            rows.append({"name": s.name, "balance": s.start, "base_clear": b.clear, "plan_clear": s.clear, "interest": s.interest})
+    for s_ in plan.debts:
+        b = next(x for x in base.debts if x.debt_id == s_.debt_id)
+        if b.start > 0:
+            rows.append({"name": s_.name, "balance": b.start, "base_clear": b.clear, "plan_clear": s_.clear, "interest": s_.interest})
     horizon = min(len(base.series), len(plan.series) + 12)
     chart = {
         "labels": [m.strftime("%b %Y") for m, _ in base.series[:horizon]],
@@ -347,7 +360,44 @@ def projection_view(request):
     }
     snaps = list(Snapshot.objects.filter(owner=request.user, clear_month__isnull=False))
     history = {"labels": [x.day.strftime("%-d %b %y") for x in snaps], "months": [((x.clear_month.year - x.day.year) * 12 + x.clear_month.month - x.day.month) for x in snaps], "clear": [x.clear_month.strftime("%b %Y") for x in snaps], "total": [float(x.total) for x in snaps]}
-    return render(request, "tracker/projection.html", {"form": form, "rows": rows, "base": base, "plan": plan, "chart": chart, "history": history, "history_n": len(snaps)})
+    total_interest = {"base": sum((x.interest for x in base.debts), ZERO), "plan": sum((x.interest for x in plan.debts), ZERO), "mine": sum((x.interest for x in mine.debts), ZERO)}
+    return render(request, "tracker/projection.html", {"form": form, "rows": rows, "base": base, "plan": plan, "mine": mine, "strategy": strategy, "lump": lump, "chart": chart, "history": history, "history_n": len(snaps), "ti": total_interest, "order": ordered})
+
+
+# ---------- settlements ----------
+
+def settle(request):
+    """Full-and-final settlement planner for collector accounts."""
+    debts = [d for d in open_debts(request.user) if d.kind == "collector" and d.balance > 0]
+    form = OfferForm(request.POST or None, initial={"date": date.today()})
+    form.fields["debt"].queryset = Debt.objects.filter(owner=request.user, kind="collector", closed=False)
+    if request.method == "POST" and form.is_valid():
+        o = form.save()
+        if o.status == "paid":
+            with transaction.atomic():
+                Payment.objects.create(debt=o.debt, date=o.date, amount=o.amount, note="settlement")
+                Debt.objects.filter(pk=o.debt_id).update(balance=ZERO, closed=True)
+            record_snapshot(request.user)
+            messages.success(request, f"{o.debt.name} settled and closed. Keep the letter.")
+        else:
+            messages.success(request, "Offer recorded.")
+        return redirect("settle")
+    cards = []
+    for d in debts:
+        months = d.months_left
+        tiers = []
+        for pct in (30, 40, 50):
+            amt = (d.balance * pct / 100).quantize(Decimal("1"))
+            tiers.append({"pct": pct, "amount": amt, "saves": d.balance - amt})
+        cards.append({"debt": d, "months": months, "years": round(months / 12, 1) if months else None, "tiers": tiers, "offers": list(d.offers.all()[:5])})
+    total = sum((d.balance for d in debts), ZERO)
+    return render(request, "tracker/settle.html", {"cards": cards, "form": form, "total": total, "at40": (total * 40 / 100).quantize(Decimal("1")), "saves40": total - (total * 40 / 100).quantize(Decimal("1"))})
+
+
+@require_POST
+def offer_delete(request, pk):
+    get_object_or_404(SettlementOffer, pk=pk, debt__owner=request.user).delete()
+    return redirect("settle")
 
 
 # ---------- PWA ----------

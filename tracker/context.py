@@ -1,4 +1,4 @@
-NAV = [("overview", "Overview"), ("spending", "Spending"), ("debts", "Debts"), ("payments", "Payments"), ("month", "This month"), ("budget", "Budget"), ("projection", "Projection")]
+NAV = [("overview", "Overview"), ("spending", "Spending"), ("debts", "Debts"), ("payments", "Payments"), ("month", "This month"), ("budget", "Budget"), ("projection", "Plan"), ("settle", "Settle")]
 NAV_MOBILE = []
 
 

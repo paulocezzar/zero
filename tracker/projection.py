@@ -24,6 +24,7 @@ class Sim:
     bal: Decimal
     monthly: Decimal
     apr: Decimal
+    promo_until: date | None = None
     clear: date | None = None
     interest: Decimal = Decimal("0")
 
@@ -43,7 +44,7 @@ class Result:
 
 
 def simulate(debts, *, start: date, extra: Decimal = Decimal("0"), extra_from: date | None = None, planned: bool = True) -> Result:
-    sims = [Sim(d.id, d.name, d.balance, d.balance, d.monthly, d.apr, clear=start if d.balance <= 0 else None) for d in debts]
+    sims = [Sim(d.id, d.name, d.balance, d.balance, d.monthly, d.apr, getattr(d, "promo_until", None), clear=start if d.balance <= 0 else None) for d in debts]
     res = Result(sims, [(start, sum(s.bal for s in sims))])
     m = start
     for _ in range(MAX_MONTHS):
@@ -56,7 +57,7 @@ def simulate(debts, *, start: date, extra: Decimal = Decimal("0"), extra_from: d
                 if planned and s.start > 0:
                     pot += s.monthly
                 continue
-            if s.apr > 0:
+            if s.apr > 0 and not (s.promo_until and m < s.promo_until):
                 i = s.bal * s.apr / Decimal(100) / 12
                 s.bal += i
                 s.interest += i
@@ -83,3 +84,13 @@ def simulate(debts, *, start: date, extra: Decimal = Decimal("0"), extra_from: d
         if res.all_clear:
             break
     return res
+
+
+def order(debts, strategy):
+    """'mine' keeps the user's priority; 'avalanche' highest APR first (promo deals count as 0% until they end); 'snowball' smallest balance first."""
+    debts = list(debts)
+    if strategy == "avalanche":
+        debts.sort(key=lambda d: (-(Decimal("0") if getattr(d, "in_promo", False) else d.apr), d.balance))
+    elif strategy == "snowball":
+        debts.sort(key=lambda d: (d.balance, d.priority))
+    return debts

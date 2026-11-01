@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import BudgetLine, Debt, MonthCheckin, Outgoing, Payment
+from .models import BudgetLine, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer
 
 
 class Bootstrap:
@@ -17,8 +17,8 @@ class Bootstrap:
 class DebtForm(Bootstrap, forms.ModelForm):
     class Meta:
         model = Debt
-        fields = ["name", "kind", "balance", "starting_balance", "monthly", "apr", "pay_day", "priority", "note", "closed"]
-        widgets = {"closed": forms.CheckboxInput(attrs={"class": "form-check-input"})}
+        fields = ["name", "kind", "balance", "starting_balance", "monthly", "apr", "promo_until", "pay_day", "priority", "note", "closed"]
+        widgets = {"closed": forms.CheckboxInput(attrs={"class": "form-check-input"}), "promo_until": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
 
 
 class PaymentForm(Bootstrap, forms.ModelForm):
@@ -50,8 +50,11 @@ class MonthForm(Bootstrap, forms.ModelForm):
 
 
 class ProjectionForm(Bootstrap, forms.Form):
-    extra = forms.DecimalField(label="Extra £ per month", initial=250, min_value=0)
+    STRATEGIES = [("mine", "My order"), ("avalanche", "Highest interest first"), ("snowball", "Smallest balance first")]
+    extra = forms.DecimalField(label="Extra £ per month", initial=250, min_value=0, max_value=5000)
     extra_from = forms.DateField(label="Extra starts from", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
+    strategy = forms.ChoiceField(choices=STRATEGIES, initial="mine", required=False)
+    lump = forms.DecimalField(label="One-off lump sum now", initial=0, min_value=0, max_value=100000, required=False)
 
 
 class SignupForm(Bootstrap, UserCreationForm):
@@ -68,3 +71,10 @@ class OutgoingForm(Bootstrap, forms.ModelForm):
 
 class ImportForm(forms.Form):
     statement = forms.FileField(label="Statement CSV", widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".csv,text/csv"}))
+
+
+class OfferForm(Bootstrap, forms.ModelForm):
+    class Meta:
+        model = SettlementOffer
+        fields = ["debt", "date", "amount", "status", "note"]
+        widgets = {"date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}

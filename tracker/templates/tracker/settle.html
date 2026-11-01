@@ -1,0 +1,43 @@
+{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Settle · Zero{% endblock %}
+{% block content %}
+<h1>Settle the collectors</h1>
+<p class="lede">Debt buyers paid pence in the pound for these accounts, so a full-and-final offer of 30–50% is often accepted — especially near their quarter end, and especially when you say it's money from a one-off source. Always get "accepted as full and final settlement" in writing before paying.</p>
+{% if cards %}
+<div class="hero">
+  <div class="big">{{ total|gbp }}<small>across {{ cards|length }} collector{{ cards|length|pluralize }}</small></div>
+  <div class="facts mt-2">
+    <div class="fact"><div class="v">{{ at40|gbp }}</div><div class="k">settles the lot at 40%</div></div>
+    <div class="fact"><div class="v good">{{ saves40|gbp }}</div><div class="k">saved</div></div>
+  </div>
+</div>
+<div class="cols"><div class="col-main">
+{% for c in cards %}
+<div class="debt">
+  <div class="head"><a class="name" href="{% url 'debt_edit' c.debt.pk %}">{{ c.debt.name }}</a><div class="bal">{{ c.debt.balance|gbp }}</div></div>
+  <div class="muted small">{{ c.debt.monthly|gbp }}/mo{% if c.months %} · {{ c.months }} months{% if c.years >= 2 %} ({{ c.years }} years){% endif %} to clear as is{% endif %}</div>
+  <div class="tiers">{% for t in c.tiers %}<div class="tier"><div class="num t-amt">{{ t.amount|gbp }}</div><div class="t-k">{{ t.pct }}% · saves {{ t.saves|gbp }}</div></div>{% endfor %}</div>
+  {% if c.offers %}<div class="list mt-2">{% for o in c.offers %}<div class="row-item"><div class="when">{{ o.date|date:"j M y" }}</div><div class="who"><div class="n1">{{ o.get_status_display }} · {{ o.amount|gbp }} ({{ o.pct }}%)</div>{% if o.note %}<div class="n2">{{ o.note }}</div>{% endif %}</div><div class="acts"><form method="post" action="{% url 'offer_delete' o.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" aria-label="Remove">×</button></form></div></div>{% endfor %}</div>{% endif %}
+</div>
+{% endfor %}
+</div><div class="col-side">
+<h2>Record an offer</h2>
+<form method="post" class="panel row g-2">{% csrf_token %}
+  <div class="col-12"><label class="form-label">Account</label>{{ form.debt }}</div>
+  <div class="col-6"><label class="form-label">Date</label>{{ form.date }}</div>
+  <div class="col-6"><label class="form-label">Amount £</label>{{ form.amount }}</div>
+  <div class="col-12"><label class="form-label">Status</label>{{ form.status }}</div>
+  <div class="col-12"><label class="form-label">Note</label>{{ form.note }}</div>
+  <div class="col-12"><button class="btn btn-accent w-100">Save</button></div>
+</form>
+<p class="muted small">Marking an offer <strong>Paid &amp; closed</strong> logs the payment, zeroes the balance and closes the account in one go.</p>
+<h2>How to pitch it</h2>
+<ol class="small">
+  <li>Write, don't phone — a letter or secure message leaves a record.</li>
+  <li>Say the money is from a third party or one-off and won't be available for long.</li>
+  <li>Start at 30%. Their counter is usually the real floor.</li>
+  <li>Ask for the entry on your credit file to be marked <em>satisfied</em> (or <em>partially satisfied</em> at worst).</li>
+  <li>Pay only after you have the acceptance in writing.</li>
+</ol>
+</div></div>
+{% else %}<p class="muted">No open collector accounts — nothing to settle.</p>{% endif %}
+{% endblock %}
