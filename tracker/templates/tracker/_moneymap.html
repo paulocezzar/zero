@@ -1,0 +1,15 @@
+{% load ledger_extras %}
+{% if map.income %}
+<div class="mmap">
+  <div class="mm-head"><span>{% if map.actual %}Where this month's money has gone so far{% else %}Where your pay goes each month{% endif %}</span><span class="num muted">{{ map.income|gbp }} in</span></div>
+  <div class="mm-bar" aria-hidden="true">
+    {% for x in map.segs %}<i class="{{ x.tone }}" style="flex:{{ x.share }}" title="{{ x.label }} {{ x.amount|gbp }}"></i>{% endfor %}
+    {% if map.left_share %}<i class="g-left" style="flex:{{ map.left_share }}" title="Left {{ map.left|gbp }}"></i>{% endif %}
+    {% if map.over_share %}<i class="g-over" style="flex:{{ map.over_share }}" title="Short by {{ map.left|gbp }}"></i>{% endif %}
+  </div>
+  <div class="mm-legend">
+    {% for x in map.segs %}<span><i class="{{ x.tone }}"></i>{{ x.label }} <b class="num">{{ x.amount|gbp }}</b> <small>{{ x.pct }}%</small></span>{% endfor %}
+    {% if map.left >= 0 %}<span><i class="g-left"></i>{% if map.actual %}Not yet spent{% else %}Left over{% endif %} <b class="num good">{{ map.left|gbp }}</b></span>{% else %}<span><i class="g-over"></i>Short by <b class="num bad">{{ map.left|gbp }}</b></span>{% endif %}
+  </div>
+</div>
+{% endif %}

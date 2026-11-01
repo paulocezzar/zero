@@ -138,6 +138,49 @@ def start_steps(user, debts):
     return None if all(x["done"] for x in steps) else steps
 
 
+GROUP_LABELS = dict(BudgetLine.GROUPS)
+GROUP_TONES = {"home": "g-home", "family": "g-family", "tech": "g-tech", "subs": "g-subs", "savings": "g-savings", "everyday": "g-everyday", "other": "g-other"}
+
+
+def money_map(user, first=None, actual=False):
+    """Where the month's income goes, as segments that add up to income.
+    Planned: every budget line. Actual: debt payments logged, bills assumed to leave on their day, everyday from Spending."""
+    lines = BudgetLine.objects.filter(owner=user)
+    income = sum((l.amount for l in lines if l.amount > 0), ZERO)
+    segs = []
+    if actual:
+        first, nxt = _month_range(first or _first_of_month())
+        today = date.today()
+        debt_paid = Payment.objects.filter(debt__owner=user, date__gte=first, date__lt=nxt).aggregate(s=Sum("amount"))["s"] or ZERO
+        if debt_paid:
+            segs.append({"key": "debt", "label": "Debt payments", "amount": debt_paid, "tone": "g-debt"})
+        by_group = {}
+        for l in lines:
+            if l.amount < 0 and l.group != "everyday" and l.pay_day and (first.replace(day=min(l.pay_day, 28)) <= today or first < _first_of_month()):
+                by_group[l.group] = by_group.get(l.group, ZERO) - l.amount
+        for g, amt in by_group.items():
+            segs.append({"key": g, "label": GROUP_LABELS.get(g, g), "amount": amt, "tone": GROUP_TONES.get(g, "g-other")})
+        everyday = Outgoing.objects.filter(owner=user, date__gte=first, date__lt=nxt).aggregate(s=Sum("amount"))["s"] or ZERO
+        if everyday:
+            segs.append({"key": "everyday", "label": "Everyday", "amount": everyday, "tone": "g-everyday"})
+    else:
+        debt_pay = Debt.objects.filter(owner=user, closed=False, balance__gt=0).aggregate(s=Sum("monthly"))["s"] or ZERO
+        if debt_pay:
+            segs.append({"key": "debt", "label": "Debt payments", "amount": debt_pay, "tone": "g-debt"})
+        for g, label in BudgetLine.GROUPS:
+            amt = -sum((l.amount for l in lines if l.amount < 0 and l.group == g), ZERO)
+            if amt > 0:
+                segs.append({"key": g, "label": label, "amount": amt, "tone": GROUP_TONES.get(g, "g-other")})
+    segs.sort(key=lambda x: -x["amount"])
+    spent = sum((x["amount"] for x in segs), ZERO)
+    left = income - spent
+    base = max(income, spent) or Decimal("1")
+    for x in segs:
+        x["share"] = round(float(x["amount"] / base * 100), 2)
+        x["pct"] = int(x["amount"] / income * 100) if income else 0
+    return {"income": income, "segs": segs, "spent": spent, "left": left, "left_share": round(float(max(left, ZERO) / base * 100), 2), "over_share": round(float(max(-left, ZERO) / base * 100), 2), "actual": actual}
+
+
 # ---------- overview ----------
 
 def overview(request):
@@ -359,7 +402,7 @@ def budget_list(request):
         g = [l for l in lines if l.group == key]
         if g:
             groups.append((label, g, sum((l.amount for l in g), ZERO)))
-    return render(request, "tracker/budget.html", {"form": form, "groups": groups, "t": budget_totals(request.user), "editing": inst})
+    return render(request, "tracker/budget.html", {"form": form, "groups": groups, "t": budget_totals(request.user), "editing": inst, "map": money_map(request.user)})
 
 
 @require_POST
@@ -627,7 +670,7 @@ def spending_view(request):
     days_left = max(0, (nxt - today).days) if first <= today < nxt else 0
     ctx = {"form": form, "items": items, "rails": everyday, "fixed": fixed, "fixed_total": sum((r["spent"] for r in fixed), ZERO), "total": total, "budget": budget, "left": budget - total, "days_left": days_left,
            "first": first, "prev": projection.add_months(first, -1), "next": nxt if nxt <= _first_of_month() else None, "is_current": first == _first_of_month(),
-           "cats": CATEGORIES}
+           "cats": CATEGORIES, "map": money_map(request.user, first, actual=True)}
     return render(request, "tracker/spending.html", ctx)
 
 

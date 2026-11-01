@@ -146,6 +146,18 @@
   .start .step .dot { width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid var(--line); flex: none; display: grid; place-items: center; font-size: .8rem; color: var(--muted); }
   .start .step.done .dot { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .start .step.done .n1 { color: var(--muted); text-decoration: line-through; }
+  /* money map */
+  .mmap { margin: .75rem 0 1.25rem; }
+  .mm-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 500; margin-bottom: .4rem; }
+  .mm-bar { display: flex; gap: 2px; height: 28px; border-radius: 8px; overflow: hidden; }
+  .mm-bar i, .mm-legend i { display: block; background: var(--rail); }
+  .mm-legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .5rem; font-size: .82rem; color: var(--muted); }
+  .mm-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+  .mm-legend i { width: 10px; height: 10px; border-radius: 3px; }
+  .mm-legend b { font-weight: 500; color: var(--ink); }
+  .g-debt { background: #1f6f6a !important; } .g-home { background: #3b5a57 !important; } .g-family { background: #5f8a86 !important; } .g-tech { background: #7f9d9a !important; }
+  .g-subs { background: #a3b8b5 !important; } .g-savings { background: #7a9a3a !important; } .g-everyday { background: #c9a227 !important; } .g-other { background: #8aa39f !important; }
+  .g-left { background: var(--rail) !important; } .g-over { background: var(--bad) !important; }
   /* home, direction A */
   .hero-a { border-bottom: 1px solid var(--line); padding-bottom: 1.1rem; }
   .hero-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; }

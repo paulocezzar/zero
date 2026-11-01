@@ -6,6 +6,7 @@
   <div class="fact"><div class="v">{{ t.fixed|gbp }}</div><div class="k">fixed lines</div></div>
   <div class="fact"><div class="v {% if t.left < 0 %}bad{% else %}good{% endif %}">{{ t.left|gbp }}</div><div class="k">left over</div></div>
 </div>
+{% include "tracker/_moneymap.html" %}
 <div class="cols"><div class="col-main">
 <form method="post" class="panel row g-2 mb-3">{% csrf_token %}
   <div class="col-12"><label class="form-label">Line</label>{{ form.item }}</div>

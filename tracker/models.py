@@ -94,7 +94,7 @@ class Payment(models.Model):
 
 
 CATEGORIES = [
-    ("groceries", "Groceries"), ("amazon", "Amazon & shopping"), ("car", "Car & fuel"), ("eating", "Eating out"),
+    ("groceries", "Groceries"), ("amazon", "Amazon & shopping"), ("fuel", "Petrol & fuel"), ("car", "Car & travel"), ("eating", "Eating out"),
     ("home", "Home & bills"), ("tech", "Phones & tech"), ("subs", "Subscriptions"), ("family", "Family"),
     ("savings", "Savings"), ("cash", "Cash"), ("health", "Health"), ("kids", "Kids"), ("fun", "Fun & days out"), ("other", "Other"),
 ]

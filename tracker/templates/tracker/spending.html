@@ -19,7 +19,7 @@
   </div>
   {% if budget %}<div class="rail {% if left < 0 %}bad{% endif %}" style="margin-top:1rem"><i style="width:{% widthratio total budget 100 %}%"></i></div>{% endif %}
 </section>
-
+{% include "tracker/_moneymap.html" %}
 <div class="cols"><div class="col-main">
 <h2>Log something</h2>
 <form method="post" class="panel row g-2 mb-3">{% csrf_token %}<input type="hidden" name="m" value="{{ first|date:'Y-m' }}">

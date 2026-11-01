@@ -122,7 +122,7 @@ class SpendingTests(TestCase):
     def test_categoriser(self):
         self.assertEqual(spending.categorise("TESCO STORES 1234"), "groceries")
         self.assertEqual(spending.categorise("AMZN Mktp UK"), "amazon")
-        self.assertEqual(spending.categorise("SHELL WINCANTON"), "car")
+        self.assertEqual(spending.categorise("SHELL WINCANTON"), "fuel")
         self.assertEqual(spending.categorise("Something odd"), "other")
         self.assertTrue(spending.is_skip("Aqua card payment DIRECT DEBIT"))
         self.assertTrue(spending.is_skip("PRA GROUP"))
