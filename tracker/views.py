@@ -239,3 +239,7 @@ def quick_pay(request, pk):
             Debt.objects.filter(pk=d.pk).update(balance=max(ZERO, d.balance - d.monthly))
         messages.success(request, f"Logged £{d.monthly} to {d.name}.")
     return redirect("overview")
+
+
+def profile(request):
+    return render(request, "tracker/profile.html")

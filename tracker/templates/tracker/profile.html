@@ -1,0 +1,35 @@
+{% extends "tracker/base.html" %}{% block title %}Profile · Zero{% endblock %}
+{% block content %}
+<h1>{{ user.username }}</h1>
+<p class="lede">Settings for this device, and your account.</p>
+
+<h2>Appearance</h2>
+<div class="seg" role="group" aria-label="Theme">
+  <button type="button" data-theme-pick="system" class="on" id="theme-system">Match phone</button>
+  <button type="button" data-theme-pick="light">Light</button>
+  <button type="button" data-theme-pick="dark">Dark</button>
+</div>
+
+<h2>Privacy</h2>
+<div class="panel">
+  <div class="form-check"><input class="form-check-input" type="checkbox" id="priv-default"><label class="form-check-label" for="priv-default">Hide amounts when the app opens</label></div>
+  <p class="muted mt-2 mb-0">Amounts blur until you tap the eye in the top bar. Useful when someone's looking over your shoulder. Remembered on this device only.</p>
+</div>
+
+<h2>Account</h2>
+<div class="list">
+  <a class="row-item text-decoration-none" href="{% url 'password_change' %}" style="color:var(--ink)"><div class="who"><div class="n1">Change password</div><div class="n2">At least 12 characters</div></div><span class="muted">›</span></a>
+  <form method="post" action="{% url 'logout' %}" class="row-item">{% csrf_token %}<div class="who"><div class="n1">Sign out</div><div class="n2">Signed-in sessions end after 14 days idle anyway</div></div><button class="btn btn-sm btn-quiet">Sign out</button></form>
+</div>
+
+<h2>App</h2>
+<div class="list">
+  <div class="row-item"><div class="who"><div class="n1">Install on this phone</div><div class="n2">Opens full-screen from the home screen</div></div><button class="btn btn-sm btn-quiet" id="install-btn-2">Install</button></div>
+  <div class="row-item"><div class="who"><div class="n1">Data</div><div class="n2">Private database on Render, Frankfurt. Only this account can read it.</div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  try { const t = localStorage.getItem('zero-theme') || 'system'; document.querySelectorAll('[data-theme-pick]').forEach((b) => b.classList.toggle('on', b.dataset.themePick === t)); } catch (e) {}
+</script>
+{% endblock %}

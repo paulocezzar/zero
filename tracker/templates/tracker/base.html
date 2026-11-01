@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{% block title %}Zero{% endblock %}</title>
+<script>try{const t=localStorage.getItem("zero-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="manifest" href="{% url 'manifest' %}">
 <meta name="theme-color" content="#f3f4f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121817" media="(prefers-color-scheme: dark)">
@@ -23,7 +24,17 @@
     --accent: #1f6f6a; --accent-ink: #ffffff; --good: #2b7a4b; --bad: #b4302a; --warn: #9a6a00;
     --display: "Fraunces", Georgia, serif; --body: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   }
-  @media (prefers-color-scheme: dark) { :root { --paper: #121817; --card: #1a2120; --ink: #e9ece7; --muted: #98a19d; --line: #2c3634; --rail: #263230; --accent: #62b8b1; --accent-ink: #0d1a19; --good: #78c58e; --bad: #ef8079; --warn: #e3b24a; color-scheme: dark; } }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #121817; --card: #1a2120; --ink: #e9ece7; --muted: #98a19d; --line: #2c3634; --rail: #263230; --accent: #62b8b1; --accent-ink: #0d1a19; --good: #78c58e; --bad: #ef8079; --warn: #e3b24a; color-scheme: dark; } }
+  :root[data-theme="dark"] { --paper: #121817; --card: #1a2120; --ink: #e9ece7; --muted: #98a19d; --line: #2c3634; --rail: #263230; --accent: #62b8b1; --accent-ink: #0d1a19; --good: #78c58e; --bad: #ef8079; --warn: #e3b24a; color-scheme: dark; }
+  /* privacy: amounts blur until revealed */
+  body.priv .big, body.priv .bal, body.priv .amt, body.priv .fact .v, body.priv .n2.num, body.priv .row-item .amt, body.priv .pct, body.priv .meta, body.priv .sub { filter: blur(7px); user-select: none; }
+  .top .icons { display: flex; gap: .25rem; align-items: center; }
+  .iconbtn { width: 2.4rem; height: 2.4rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  .iconbtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .iconbtn.on { color: var(--accent); border-color: var(--accent); }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; background: var(--card); color: var(--muted); padding: .55rem; font: inherit; }
+  .seg button.on { background: var(--accent); color: var(--accent-ink); }
   html { background: var(--paper); }
   body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); -webkit-font-smoothing: antialiased; }
   @media (min-width: 768px) { body { padding-bottom: 3rem; } }
@@ -117,10 +128,10 @@
   <header class="top">
     <a class="brand" href="{% url 'overview' %}">Zero</a>
     {% if user.is_authenticated %}
-    <form method="post" action="{% url 'logout' %}" class="links">{% csrf_token %}
-      <a href="{% url 'password_change' %}">Password</a>
-      <button type="submit">Sign out</button>
-    </form>
+    <div class="icons">
+      <button class="iconbtn" id="priv-btn" type="button" aria-label="Hide amounts" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <a class="iconbtn {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'password_change' %}on{% endif %}" href="{% url 'profile' %}" aria-label="Profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></a>
+    </div>
     {% endif %}
   </header>
   {% if user.is_authenticated %}
@@ -148,6 +159,20 @@
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; if (installEl) installEl.classList.add('show'); });
   if (installBtn) installBtn.addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; if (installEl) installEl.classList.remove('show'); });
   window.addEventListener('appinstalled', () => { if (installEl) installEl.classList.remove('show'); });
+  // privacy mode: blur amounts; remembered per device
+  const privBtn = document.getElementById('priv-btn');
+  const setPriv = (on, remember) => { document.body.classList.toggle('priv', on); if (privBtn) { privBtn.classList.toggle('on', on); privBtn.setAttribute('aria-pressed', on); privBtn.setAttribute('aria-label', on ? 'Show amounts' : 'Hide amounts'); } if (remember) { try { localStorage.setItem('zero-priv', on ? '1' : '0'); } catch (e) {} } };
+  try { if (localStorage.getItem('zero-priv') === '1' || (localStorage.getItem('zero-priv') === null && localStorage.getItem('zero-priv-default') === '1')) setPriv(true, false); } catch (e) {}
+  if (privBtn) privBtn.addEventListener('click', () => setPriv(!document.body.classList.contains('priv'), true));
+  // theme controls (on the profile page)
+  document.querySelectorAll('[data-theme-pick]').forEach((b) => b.addEventListener('click', () => {
+    const v = b.dataset.themePick; try { v === 'system' ? localStorage.removeItem('zero-theme') : localStorage.setItem('zero-theme', v); } catch (e) {}
+    if (v === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
+    document.querySelectorAll('[data-theme-pick]').forEach((x) => x.classList.toggle('on', x === b));
+  }));
+  const pd = document.getElementById('priv-default');
+  if (pd) { try { pd.checked = localStorage.getItem('zero-priv-default') === '1'; } catch (e) {} pd.addEventListener('change', () => { try { localStorage.setItem('zero-priv-default', pd.checked ? '1' : '0'); localStorage.removeItem('zero-priv'); } catch (e) {} }); }
+  const ib2 = document.getElementById('install-btn-2'); if (ib2) ib2.addEventListener('click', async () => { if (!deferred) { ib2.textContent = 'Use your browser menu: Add to Home screen'; return; } deferred.prompt(); await deferred.userChoice; deferred = null; });
 </script>
 {% block scripts %}{% endblock %}
 </body>

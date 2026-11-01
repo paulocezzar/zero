@@ -26,7 +26,7 @@ class LedgerTests(TestCase):
 
     def test_pages_render(self):
         self.client.force_login(self.user)
-        for name in ["overview", "debts", "payments", "month", "budget", "projection", "debt_new"]:
+        for name in ["overview", "debts", "payments", "month", "budget", "projection", "debt_new", "profile"]:
             self.assertEqual(self.client.get(reverse(name)).status_code, 200, name)
         self.assertEqual(self.client.get(reverse("debt_edit", args=[self.d.pk])).status_code, 200)
 
