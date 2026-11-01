@@ -67,6 +67,14 @@ class SignupForm(Bootstrap, UserCreationForm):
     class Meta(UserCreationForm.Meta):
         fields = ("username", "email")
 
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.fields["username"].help_text = "Letters and numbers. This is how you sign in; it isn't shown to anyone."
+        self.fields["username"].widget.attrs.update({"autocomplete": "username", "autocapitalize": "none", "spellcheck": "false"})
+        self.fields["password1"].help_text = "12 characters or more. A few unrelated words you'll remember beats a short jumble."
+        self.fields["password2"].label = "Password again"
+        self.fields["password2"].help_text = ""
+
     def clean_website(self):
         if self.cleaned_data.get("website"):
             raise forms.ValidationError("Something went wrong. Try again.")
