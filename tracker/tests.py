@@ -63,3 +63,12 @@ class LedgerTests(TestCase):
         self.client.force_login(self.user)
         self.client.post(reverse("debt_move", args=[self.v.pk, "up"]))
         self.assertEqual(list(Debt.objects.values_list("name", flat=True)), ["Vanda", "Aqua"])
+
+    def test_quick_pay_once_per_month(self):
+        self.client.force_login(self.user)
+        self.client.post(reverse("quick_pay", args=[self.d.pk]))
+        self.client.post(reverse("quick_pay", args=[self.d.pk]))
+        self.d.refresh_from_db()
+        self.assertEqual(self.d.balance, Decimal("900"))
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertNotContains(self.client.get(reverse("overview")), "quick_pay/%d/" % self.d.pk)

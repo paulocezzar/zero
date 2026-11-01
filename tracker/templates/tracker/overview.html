@@ -17,6 +17,7 @@
     <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}" title="Different amount">…</a>
   </div>
 {% empty %}<p class="muted">Nothing due in the next two weeks.</p>{% endfor %}
+{% if done %}<p class="muted small mb-1">Paid this month:</p><p class="small">{% for d in done %}<span class="badge text-bg-light border me-1">✓ {{ d.name }}</span>{% endfor %}</p>{% endif %}
 </div>
 <p class="muted small">"Paid" logs the usual monthly amount dated today. Use "…" for a different amount or date.</p>
 

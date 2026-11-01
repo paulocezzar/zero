@@ -39,9 +39,13 @@ def overview(request):
     debts = list(open_debts())
     t = budget_totals()
     today = date.today()
-    due = []
+    paid_ids = set(Payment.objects.filter(date__gte=_first_of_month(), debt_id__in=[d.id for d in debts]).values_list("debt_id", flat=True))
+    due, done = [], []
     for d in debts:
         if d.balance <= 0 or d.monthly <= 0:
+            continue
+        if d.id in paid_ids:
+            done.append(d)
             continue
         diff = d.pay_day - today.day
         if diff < 0:
@@ -57,7 +61,7 @@ def overview(request):
         "total": sum((d.balance for d in debts), ZERO),
         "interest_total": sum((d.balance for d in interest_debts), ZERO),
         "interest_monthly": sum((d.monthly_interest for d in interest_debts), ZERO),
-        "t": t, "due": due, "debts": debts, "plan_clear": plan_clear, "last": last,
+        "t": t, "due": due, "done": done, "debts": debts, "plan_clear": plan_clear, "last": last,
         "recent": Payment.objects.select_related("debt")[:8],
     }
     return render(request, "tracker/overview.html", ctx)
@@ -221,6 +225,9 @@ def manifest(request):
 def quick_pay(request, pk):
     """One tap from the overview: log this debt's monthly payment dated today."""
     d = get_object_or_404(Debt, pk=pk, closed=False)
+    if Payment.objects.filter(debt=d, date__gte=_first_of_month()).exists():
+        messages.info(request, f"{d.name} is already logged this month. Use Pay for an extra payment.")
+        return redirect("overview")
     if d.monthly > 0:
         with transaction.atomic():
             Payment.objects.create(debt=d, date=date.today(), amount=d.monthly, note="quick")
