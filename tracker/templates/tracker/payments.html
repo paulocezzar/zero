@@ -1,4 +1,4 @@
-{% extends "tracker/base.html" %}{% block title %}Payments · Zero{% endblock %}
+{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Payments · Zero{% endblock %}
 {% block content %}
 <h1 class="h4">Log a payment</h1>
 <form method="post" class="row g-2 align-items-end mb-2">{% csrf_token %}
@@ -12,7 +12,7 @@
 <p class="muted">Logging a payment also takes it off that debt's balance.</p>
 <div class="table-responsive"><table class="table table-sm align-middle">
   <thead><tr><th>Date</th><th>Debt</th><th class="n">Amount</th><th>Note</th><th></th></tr></thead>
-  <tbody>{% for p in payments %}<tr><td class="num">{{ p.date|date:"d/m/Y" }}</td><td>{{ p.debt.name }}</td><td class="n num">£{{ p.amount }}</td><td class="muted">{{ p.note }}</td>
+  <tbody>{% for p in payments %}<tr><td class="num">{{ p.date|date:"d/m/Y" }}</td><td>{{ p.debt.name }}</td><td class="n num">{{ p.amount|gbp:2 }}</td><td class="muted">{{ p.note }}</td>
   <td class="text-end"><form method="post" action="{% url 'payment_undo' p.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger py-0">Undo</button></form></td></tr>
   {% empty %}<tr><td colspan="5" class="muted">No payments logged yet.</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

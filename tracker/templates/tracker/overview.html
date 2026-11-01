@@ -1,17 +1,17 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}
 {% block content %}
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="tile hot"><div class="k">Owed in total</div><div class="v num">£{{ total|floatformat:0 }}</div><div class="muted">{{ debts|length }} open debts</div></div></div>
-  <div class="col-6 col-md-3"><div class="tile"><div class="k">Charging interest</div><div class="v num {% if interest_total %}bad{% endif %}">£{{ interest_total|floatformat:0 }}</div><div class="muted">{% if interest_monthly %}≈ £{{ interest_monthly|floatformat:0 }} a month{% else %}no APR entered yet{% endif %}</div></div></div>
-  <div class="col-6 col-md-3"><div class="tile"><div class="k">Debt payments</div><div class="v num">£{{ t.debt_pay|floatformat:0 }}</div><div class="muted">every month</div></div></div>
-  <div class="col-6 col-md-3"><div class="tile"><div class="k">Budget left over</div><div class="v num {% if t.left < 0 %}bad{% else %}good{% endif %}">£{{ t.left|floatformat:0 }}</div><div class="muted">after everything</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile hot"><div class="k">Owed in total</div><div class="v num">{{ total|gbp }}</div><div class="muted">{{ debts|length }} open debts</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile"><div class="k">Charging interest</div><div class="v num {% if interest_total %}bad{% endif %}">{{ interest_total|gbp }}</div><div class="muted">{% if interest_monthly %}≈ {{ interest_monthly|gbp }} a month{% else %}no APR entered yet{% endif %}</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile"><div class="k">Debt payments</div><div class="v num">{{ t.debt_pay|gbp }}</div><div class="muted">every month</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile"><div class="k">Budget left over</div><div class="v num {% if t.left < 0 %}bad{% else %}good{% endif %}">{{ t.left|gbp }}</div><div class="muted">after everything</div></div></div>
 </div>
 
 <h2 class="h5">Due in the next 14 days</h2>
 <div class="table-responsive mb-4"><table class="table table-sm align-middle">
   <thead><tr><th>When</th><th>Debt</th><th class="n">Amount</th><th></th></tr></thead>
   <tbody>
-  {% for diff, d in due %}<tr><td>{% if diff == 0 %}Today{% else %}in {{ diff }} day{{ diff|pluralize }}{% endif %}</td><td>{{ d.name }}</td><td class="n num">£{{ d.monthly }}</td><td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}">Log as paid</a></td></tr>
+  {% for diff, d in due %}<tr><td>{% if diff == 0 %}Today{% else %}in {{ diff }} day{{ diff|pluralize }}{% endif %}</td><td>{{ d.name }}</td><td class="n num">{{ d.monthly|gbp:2 }}</td><td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}">Log as paid</a></td></tr>
   {% empty %}<tr><td colspan="4" class="muted">Nothing due in the next two weeks.</td></tr>{% endfor %}
   </tbody></table></div>
 
@@ -20,13 +20,13 @@
 <div class="table-responsive mb-4"><table class="table table-sm align-middle">
   <thead><tr><th>#</th><th>Debt</th><th class="n">Balance</th><th class="n">Monthly</th><th>Clears as is</th><th>With the plan</th></tr></thead>
   <tbody>{% for d in debts %}{% if d.balance > 0 %}
-  <tr><td class="num">{{ forloop.counter }}</td><td>{{ d.name }}{% if d.apr %} <span class="badge text-bg-danger">interest</span>{% endif %}</td><td class="n num">£{{ d.balance|floatformat:0 }}</td><td class="n num">{% if d.monthly %}£{{ d.monthly|floatformat:0 }}{% else %}—{% endif %}</td>
+  <tr><td class="num">{{ forloop.counter }}</td><td>{{ d.name }}{% if d.apr %} <span class="badge text-bg-danger">interest</span>{% endif %}</td><td class="n num">{{ d.balance|gbp }}</td><td class="n num">{% if d.monthly %}{{ d.monthly|gbp }}{% else %}—{% endif %}</td>
   <td>{% with m=d.months_left %}{% if m is None %}—{% else %}{{ m }} mo{% endif %}{% endwith %}</td><td>{% with c=plan_clear|get_item:d.pk %}{{ c|date:"M Y"|default:"15+ yrs" }}{% endwith %}</td></tr>
   {% endif %}{% endfor %}</tbody></table></div>
 
 {% if last %}<h2 class="h5">Last check-in · {{ last }}</h2>
-<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">£{{ last.left_over }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">£{{ last.aqua_balance }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">£{{ last.starling_on_3rd }}</span>{% endif %}</p>{% endif %}
+<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp:2 }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp:2 }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp:2 }}</span>{% endif %}</p>{% endif %}
 
 <h2 class="h5">Recent payments</h2>
-<ul class="list-unstyled">{% for p in recent %}<li class="muted"><span class="num">{{ p.date|date:"d M" }}</span> · {{ p.debt.name }} · <span class="num">£{{ p.amount }}</span>{% if p.note %} · {{ p.note }}{% endif %}</li>{% empty %}<li class="muted">None yet.</li>{% endfor %}</ul>
+<ul class="list-unstyled">{% for p in recent %}<li class="muted"><span class="num">{{ p.date|date:"d M" }}</span> · {{ p.debt.name }} · <span class="num">{{ p.amount|gbp:2 }}</span>{% if p.note %} · {{ p.note }}{% endif %}</li>{% empty %}<li class="muted">None yet.</li>{% endfor %}</ul>
 {% endblock %}

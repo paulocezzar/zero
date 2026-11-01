@@ -1,4 +1,4 @@
-{% extends "tracker/base.html" %}{% block title %}{{ title }} · Zero{% endblock %}
+{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}{{ title }} · Zero{% endblock %}
 {% block content %}
 <h1 class="h4 mb-3">{{ title }}</h1>
 <form method="post" class="row g-3">{% csrf_token %}

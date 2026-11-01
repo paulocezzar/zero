@@ -191,10 +191,11 @@ def projection_view(request):
         b = next(x for x in base.debts if x.debt_id == s.debt_id)
         if s.start > 0:
             rows.append({"name": s.name, "balance": s.start, "base_clear": b.clear, "plan_clear": s.clear, "interest": s.interest})
+    horizon = min(len(base.series), len(plan.series) + 12)
     chart = {
-        "labels": [m.strftime("%b %y") for m, _ in base.series],
-        "base": [float(v) for _, v in base.series],
-        "plan": [float(v) for _, v in plan.series] + [0.0] * (len(base.series) - len(plan.series)),
+        "labels": [m.strftime("%b %Y") for m, _ in base.series[:horizon]],
+        "base": [float(v) for _, v in base.series[:horizon]],
+        "plan": ([float(v) for _, v in plan.series] + [0.0] * horizon)[:horizon],
     }
     return render(request, "tracker/projection.html", {"form": form, "rows": rows, "base": base, "plan": plan, "chart": chart})
 
