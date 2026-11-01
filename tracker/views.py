@@ -586,7 +586,7 @@ def signup(request):
         user = form.save()
         Consent.objects.create(owner=user, terms_version=settings.TERMS_VERSION)
         login(request, user)
-        messages.success(request, "Welcome. Three steps on Home and you're set up.")
+        messages.success(request, "Welcome.")
         return redirect("overview")
     return render(request, "tracker/signup.html", {"form": form})
 

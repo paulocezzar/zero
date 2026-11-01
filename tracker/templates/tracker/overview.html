@@ -7,7 +7,9 @@
   {% for st in start %}<div class="step {% if st.done %}done{% endif %}"><div class="dot">{% if st.done %}✓{% else %}{{ forloop.counter }}{% endif %}</div><div style="flex:1"><div class="n1">{{ st.n1 }}</div>{% if not st.done %}<div class="muted small">{{ st.n2 }}</div>{% endif %}</div>{% if not st.done %}<a class="btn btn-sm btn-accent" href="{% url st.url %}">{{ st.cta }}</a>{% endif %}</div>{% endfor %}
 </div>
 {% endif %}
-{% if debts %}
+{% if not debts %}
+<p class="muted">Once the first debt is in, this page becomes the picture: what's due, what's left to spend, and the road to zero.</p>
+{% else %}
 <section class="hero hero-a">
   <div class="hero-row">
     <div>
@@ -35,7 +37,6 @@
   {% endif %}
   {% if no_apr %}<p class="small warn mt-2 mb-0">{% for d in no_apr %}<a href="{% url 'debt_edit' d.pk %}">{{ d.name }}</a> has no APR set, so its interest isn't counted yet.{% endfor %}</p>{% endif %}
 </section>
-{% endif %}
 
 <div class="three">
   <div class="card">
@@ -121,6 +122,7 @@
 <p class="muted small">Extra money goes to the top until it hits zero, then rolls down. <a href="{% url 'debts' %}">Reorder</a> · <a href="{% url 'projection' %}">Plan</a> · <a href="{% url 'settle' %}">Settle</a></p>
 </div>
 </div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>(() => {
