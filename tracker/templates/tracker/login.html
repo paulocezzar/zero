@@ -1,0 +1,13 @@
+{% extends "tracker/base.html" %}{% block title %}Sign in · Repayment Ledger{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-5">
+<h1 class="h4 mb-3">Sign in</h1>
+{% if form.errors %}<div class="alert alert-danger py-2">Wrong username or password.</div>{% endif %}
+<form method="post">{% csrf_token %}
+  <div class="mb-3"><label class="form-label" for="id_username">Username</label><input class="form-control" id="id_username" name="username" autocomplete="username" autofocus required></div>
+  <div class="mb-3"><label class="form-label" for="id_password">Password</label><input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required></div>
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn btn-accent w-100">Sign in</button>
+</form>
+</div></div>
+{% endblock %}

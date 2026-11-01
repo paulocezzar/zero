@@ -1,0 +1,22 @@
+{% extends "tracker/base.html" %}{% block title %}Budget · Repayment Ledger{% endblock %}
+{% block content %}
+<h1 class="h4">Budget</h1>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="tile"><div class="k">Income</div><div class="v num">£{{ t.income|floatformat:0 }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile"><div class="k">Fixed lines</div><div class="v num">£{{ t.fixed|floatformat:0 }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile"><div class="k">Debt payments</div><div class="v num">−£{{ t.debt_pay|floatformat:0 }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="tile hot"><div class="k">Left over</div><div class="v num {% if t.left < 0 %}bad{% else %}good{% endif %}">£{{ t.left|floatformat:0 }}</div></div></div>
+</div>
+<form method="post" class="row g-2 align-items-end mb-3">{% csrf_token %}
+  <div class="col-12 col-md-4"><label class="form-label">Line</label>{{ form.item }}</div>
+  <div class="col-6 col-md-2"><label class="form-label">Group</label>{{ form.group }}</div>
+  <div class="col-6 col-md-2"><label class="form-label">£ / month</label>{{ form.amount }}</div>
+  <div class="col-8 col-md-3"><label class="form-label">Note</label>{{ form.note }}</div>
+  <div class="col-4 col-md-1"><button class="btn btn-accent w-100">{% if editing %}Save{% else %}Add{% endif %}</button></div>
+</form>
+<p class="muted">Income positive, costs negative. Debt payments come from the Debts page, so don't repeat them here.</p>
+{% for label, lines, total in groups %}
+<h2 class="h6 mt-3 text-uppercase text-secondary">{{ label }} <span class="num float-end">£{{ total|floatformat:0 }}</span></h2>
+<table class="table table-sm align-middle"><tbody>{% for l in lines %}<tr><td>{{ l.item }}{% if l.note %}<div class="muted">{{ l.note }}</div>{% endif %}</td><td class="n num">£{{ l.amount }}</td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary py-0" href="?edit={{ l.pk }}">Edit</a> <form method="post" action="{% url 'budget_delete' l.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-danger py-0">×</button></form></td></tr>{% endfor %}</tbody></table>
+{% endfor %}
+{% endblock %}

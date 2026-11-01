@@ -1,0 +1,16 @@
+{% extends "tracker/base.html" %}{% block title %}Debts · Repayment Ledger{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2"><h1 class="h4 m-0">Debts</h1><a class="btn btn-accent btn-sm" href="{% url 'debt_new' %}">Add</a></div>
+<p class="muted">Balance is what the creditor says today. Logging a payment reduces it; correct it from a statement any time.</p>
+<div class="table-responsive"><table class="table table-sm align-middle">
+  <thead><tr><th>Priority</th><th>Debt</th><th class="n">Balance</th><th class="n">Monthly</th><th class="n">APR</th><th>Day</th><th class="n">Months left</th><th></th></tr></thead>
+  <tbody>{% for d in debts %}
+  <tr class="{% if d.closed %}text-muted{% endif %}">
+    <td class="text-nowrap"><form method="post" action="{% url 'debt_move' d.pk 'up' %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary py-0" {% if forloop.first %}disabled{% endif %}>↑</button></form>
+      <form method="post" action="{% url 'debt_move' d.pk 'down' %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary py-0" {% if forloop.last %}disabled{% endif %}>↓</button></form></td>
+    <td><a href="{% url 'debt_edit' d.pk %}" class="text-decoration-none">{{ d.name }}</a> <span class="badge {% if d.apr %}text-bg-danger{% elif d.kind == 'family' %}text-bg-info{% else %}text-bg-light border{% endif %}">{{ d.get_kind_display }}{% if d.apr %} · interest{% endif %}</span>{% if d.closed %} <span class="badge text-bg-secondary">closed</span>{% endif %}{% if d.note %}<div class="muted">{{ d.note }}</div>{% endif %}</td>
+    <td class="n num">£{{ d.balance }}</td><td class="n num">£{{ d.monthly }}</td><td class="n num">{% if d.apr %}{{ d.apr }}%{% else %}—{% endif %}</td><td class="num">{{ d.pay_day }}</td>
+    <td class="n num">{% with m=d.months_left %}{% if m is None %}—{% else %}{{ m }}{% endif %}{% endwith %}</td>
+    <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}">Pay</a> <a class="btn btn-sm btn-outline-secondary" href="{% url 'debt_edit' d.pk %}">Edit</a></td>
+  </tr>{% empty %}<tr><td colspan="8" class="muted">No debts yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

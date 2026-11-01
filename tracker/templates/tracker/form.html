@@ -1,0 +1,19 @@
+{% extends "tracker/base.html" %}{% block title %}{{ title }} · Repayment Ledger{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">{{ title }}</h1>
+<form method="post" class="row g-3">{% csrf_token %}
+  {% for f in form %}
+  <div class="{% if f.name == 'note' or f.name == 'name' %}col-12{% else %}col-6 col-md-3{% endif %}">
+    {% if f.field.widget.input_type == 'checkbox' %}<div class="form-check mt-4">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label></div>
+    {% else %}<label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% endif %}
+    {% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </div>
+  {% endfor %}
+  <div class="col-12 d-flex gap-2"><button class="btn btn-accent">Save</button><a class="btn btn-outline-secondary" href="{% url back %}">Cancel</a></div>
+</form>
+{% if delete %}
+<form method="post" action="{% url 'debt_delete' delete.pk %}" class="mt-4" onsubmit="return this.dataset.armed === '1' || (this.dataset.armed = '1', this.querySelector('button').textContent = 'Press again to remove', false)">{% csrf_token %}
+  <button class="btn btn-outline-danger btn-sm">Remove this debt</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{
+  "debts": [
+    {"name": "Aqua credit card", "kind": "card", "balance": "6435.29", "monthly": "200", "apr": "0", "pay_day": 3, "note": "£6,600 limit. Enter the APR from the statement. Monthly = what you commit above new spending."},
+    {"name": "Vanda", "kind": "family", "balance": "3717.35", "monthly": "155.91", "apr": "0", "pay_day": 1, "note": "Interest-free. £104.09 insurance also goes on the 1st (in Budget)."},
+    {"name": "Shop Direct (ACI)", "kind": "collector", "balance": "520.75", "monthly": "30", "apr": "0", "pay_day": 2, "note": "Small enough to clear outright."},
+    {"name": "Link Financial", "kind": "collector", "balance": "1188.05", "monthly": "25", "apr": "0", "pay_day": 2, "note": "Invited a settlement offer in writing (May 2026)."},
+    {"name": "V12 Retail Finance (ACI)", "kind": "collector", "balance": "1389.98", "monthly": "30", "apr": "0", "pay_day": 2, "note": ""},
+    {"name": "Wescot (HSBC Visa)", "kind": "collector", "balance": "1788.57", "monthly": "30", "apr": "0", "pay_day": 2, "note": "ESTIMATE from 2023 tracker; confirm with Wescot."},
+    {"name": "PRA Group (Barclaycard)", "kind": "collector", "balance": "8197.01", "monthly": "25", "apr": "0", "pay_day": 2, "note": "Settlement is the only realistic exit."},
+    {"name": "Amazon instalments", "kind": "short", "balance": "587.67", "monthly": "146.92", "apr": "0", "pay_day": 12, "note": "LEGO £67 (24th), fridge £59.80 (12th), mattress £20.12 (4th). All end Feb 2027."}
+  ],
+  "budget": [
+    {"item": "Take-home pay (The Newt)", "group": "income", "amount": "3304.64"},
+    {"item": "Rent", "group": "home", "amount": "-1400"},
+    {"item": "Sky TV", "group": "home", "amount": "-21"},
+    {"item": "Sky broadband", "group": "home", "amount": "-20"},
+    {"item": "TV licence", "group": "home", "amount": "-16.36"},
+    {"item": "Vanda — insurance element", "group": "family", "amount": "-104.09"},
+    {"item": "Parents (Wise from Starling)", "group": "family", "amount": "-150"},
+    {"item": "O2 ×2", "group": "tech", "amount": "-136.95", "note": "Check contract end dates"},
+    {"item": "Sky — MacBook Pro agreement", "group": "tech", "amount": "-59"},
+    {"item": "Sky — MacBook Air agreement", "group": "tech", "amount": "-24.11"},
+    {"item": "Netflix direct (cancel once linked to Sky)", "group": "subs", "amount": "-12.99"},
+    {"item": "Google Play, PlayStation, Apple", "group": "subs", "amount": "-47.47"},
+    {"item": "Software (Claude, ChatGPT, Google One, Proton)", "group": "subs", "amount": "-140.67"},
+    {"item": "Savings (Emergency £50 + kids £20)", "group": "savings", "amount": "-70"},
+    {"item": "Unite the Union", "group": "other", "amount": "-18.59"},
+    {"item": "Groceries (estimate)", "group": "everyday", "amount": "-350"},
+    {"item": "Amazon orders (estimate)", "group": "everyday", "amount": "-300"},
+    {"item": "Car, fuel, travel (estimate)", "group": "everyday", "amount": "-250"},
+    {"item": "Eating out / other (estimate)", "group": "everyday", "amount": "-150"}
+  ]
+}
