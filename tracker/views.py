@@ -179,6 +179,28 @@ def overview(request):
     rails = [r for r in category_rails(request.user, first) if not r["fixed"]]
     spent = sum((r["spent"] for r in rails), ZERO)
     clear = plan.last_month if plan.all_clear else None
+    # the road: every open balance as a block, in the order the plan clears it, sized by balance
+    road = []
+    for d in sorted((d for d in debts if d.balance > 0), key=lambda d: (plan_clear.get(d.id) is None, plan_clear.get(d.id) or date.max, -d.balance)):
+        share = float(d.balance / total * 100) if total else 0
+        tone = "hot" if (d.apr and not d.in_promo) else ("promo" if d.in_promo else {"family": "fam", "collector": "col"}.get(d.kind, "oth"))
+        road.append({"debt": d, "share": round(share, 2), "clear": plan_clear.get(d.id), "tone": tone, "wide": share >= 9, "xwide": share >= 20})
+    # what the last snapshot said, for "was X before today's payment"
+    prev = Snapshot.objects.filter(owner=request.user, day__lt=today).order_by("-day").first()
+    prev_clear = prev.clear_month if prev and prev.clear_month and clear and prev.clear_month != clear else None
+    # bills collapsed into today / this week / next week
+    bill_groups = []
+    for label, lo, hi in (("Today", 0, 0), ("This week", 1, 7), ("Next week", 8, 14)):
+        g = [b for diff, b in bills if lo <= diff <= hi]
+        if g:
+            bill_groups.append({"label": label, "lines": g, "total": -sum((b.amount for b in g), ZERO)})
+    snaps = list(Snapshot.objects.filter(owner=request.user).order_by("-day")[:12])[::-1]
+    top = max((x.total for x in snaps), default=ZERO)
+    history = [{"pct": int(x.total / top * 100) if top else 0, "day": x.day} for x in snaps]
+    daily_interest = sum((d.monthly_interest for d in interest_debts), ZERO) * 12 / 365
+    everyday_budget = sum((r["budget"] for r in rails), ZERO)
+    days_left = (projection.add_months(first, 1) - today).days
+    per_day = ((everyday_budget - spent) / days_left).quantize(Decimal("1")) if everyday_budget > spent and days_left else None
     ctx = {
         "progress": max(0, min(100, progress)),
         "plan_total_clear": clear, "clear_iso": clear.isoformat() if clear else "",
@@ -189,8 +211,11 @@ def overview(request):
         "no_apr": [d for d in debts if d.kind == "card" and d.apr == 0 and d.balance > 0],
         "t": t, "due": due, "groups": groups, "done": done, "bills": bills, "debts": debts, "plan_clear": plan_clear, "asis_clear": asis_clear, "last": last,
         "next_win": next_win, "streak": paid_streak(request.user, debts),
-        "spent": spent, "everyday_budget": sum((r["budget"] for r in rails), ZERO), "days_left": (projection.add_months(first, 1) - today).days, "rails": rails[:5],
+        "spent": spent, "everyday_budget": everyday_budget, "days_left": days_left, "per_day": per_day, "rails": rails[:5],
         "recent": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:6],
+        "road": road, "prev_clear": prev_clear, "bill_groups": bill_groups, "history": history,
+        "paid_off": start_total - total, "closed_count": Debt.objects.filter(owner=request.user, closed=True).count(),
+        "daily_interest": daily_interest.quantize(Decimal("0.01")),
     }
     return render(request, "tracker/overview.html", ctx)
 
