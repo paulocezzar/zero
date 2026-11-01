@@ -32,7 +32,7 @@
   body.priv .big, body.priv .hero-date .when-big, body.priv .card .v { filter: blur(.6em); }
   .top .icons { display: flex; gap: .25rem; align-items: center; }
   .brand { display: inline-flex; align-items: center; gap: .55rem; }
-  .brand .mark { width: 36px; height: 9px; fill: var(--accent); }
+  .brand .logo { width: 36px; height: 9px; fill: var(--accent); }
   .iconbtn { width: 2.4rem; height: 2.4rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
   .iconbtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .iconbtn.on { color: var(--accent); border-color: var(--accent); }
@@ -234,7 +234,7 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="{% url 'overview' %}"><svg class="mark" viewBox="0 0 112 28" aria-hidden="true"><rect x="0" y="0" width="48" height="28" rx="6"/><rect x="54" y="0" width="28" height="28" rx="6"/><rect x="88" y="0" width="14" height="28" rx="6"/><circle cx="108" cy="14" r="4"/></svg>Zero</a>
+    <a class="brand" href="{% url 'overview' %}"><svg class="logo" viewBox="0 0 112 28" aria-hidden="true"><rect x="0" y="0" width="48" height="28" rx="6"/><rect x="54" y="0" width="28" height="28" rx="6"/><rect x="88" y="0" width="14" height="28" rx="6"/><circle cx="108" cy="14" r="4"/></svg>Zero</a>
     {% if user.is_authenticated %}
     <div class="icons">
       <button class="iconbtn" id="priv-btn" type="button" aria-label="Hide amounts" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
