@@ -16,7 +16,7 @@ class Bootstrap:
 class DebtForm(Bootstrap, forms.ModelForm):
     class Meta:
         model = Debt
-        fields = ["name", "kind", "balance", "monthly", "apr", "pay_day", "priority", "note", "closed"]
+        fields = ["name", "kind", "balance", "starting_balance", "monthly", "apr", "pay_day", "priority", "note", "closed"]
         widgets = {"closed": forms.CheckboxInput(attrs={"class": "form-check-input"})}
 
 

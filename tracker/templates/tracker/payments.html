@@ -1,18 +1,19 @@
-{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Payments · Zero{% endblock %}
+{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Pay · Zero{% endblock %}
 {% block content %}
-<h1 class="h4">Log a payment</h1>
-<form method="post" class="row g-2 align-items-end mb-2">{% csrf_token %}
-  <div class="col-6 col-md-2"><label class="form-label" for="id_date">Date</label>{{ form.date }}</div>
-  <div class="col-6 col-md-4"><label class="form-label" for="id_debt">Debt</label>{{ form.debt }}</div>
-  <div class="col-6 col-md-2"><label class="form-label" for="id_amount">Amount £</label>{{ form.amount }}</div>
-  <div class="col-6 col-md-3"><label class="form-label" for="id_note">Note</label>{{ form.note }}</div>
-  <div class="col-12 col-md-1"><button class="btn btn-accent w-100">Log</button></div>
-  {% for e in form.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+<h1>Log a payment</h1>
+<form method="post" class="panel row g-2 mb-3">{% csrf_token %}
+  <div class="col-6"><label class="form-label" for="id_date">Date</label>{{ form.date }}</div>
+  <div class="col-6"><label class="form-label" for="id_debt">Debt</label>{{ form.debt }}</div>
+  <div class="col-6"><label class="form-label" for="id_amount">Amount £</label>{{ form.amount }}</div>
+  <div class="col-6"><label class="form-label" for="id_note">Note</label>{{ form.note }}</div>
+  <div class="col-12"><button class="btn btn-accent w-100">Log payment</button></div>
+  {% for e in form.non_field_errors %}<div class="col-12 text-danger small">{{ e }}</div>{% endfor %}
 </form>
-<p class="muted">Logging a payment also takes it off that debt's balance.</p>
-<div class="table-responsive"><table class="table table-sm align-middle">
-  <thead><tr><th>Date</th><th>Debt</th><th class="n">Amount</th><th>Note</th><th></th></tr></thead>
-  <tbody>{% for p in payments %}<tr><td class="num">{{ p.date|date:"d/m/Y" }}</td><td>{{ p.debt.name }}</td><td class="n num">{{ p.amount|gbp:2 }}</td><td class="muted">{{ p.note }}</td>
-  <td class="text-end"><form method="post" action="{% url 'payment_undo' p.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger py-0">Undo</button></form></td></tr>
-  {% empty %}<tr><td colspan="5" class="muted">No payments logged yet.</td></tr>{% endfor %}</tbody></table></div>
+<p class="muted">Logging a payment takes it off that debt's balance. Undo puts it back.</p>
+<div class="list">
+{% for p in payments %}
+  <div class="row-item"><div class="when">{{ p.date|date:"j M" }}</div><div class="who"><div class="n1">{{ p.debt.name }}</div>{% if p.note and p.note != 'quick' %}<div class="n2">{{ p.note }}</div>{% endif %}</div><div class="amt">{{ p.amount|gbp:2 }}</div>
+  <form method="post" action="{% url 'payment_undo' p.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet">Undo</button></form></div>
+{% empty %}<p class="muted py-3">No payments logged yet.</p>{% endfor %}
+</div>
 {% endblock %}

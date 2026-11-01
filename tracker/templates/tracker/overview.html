@@ -1,38 +1,48 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}
 {% block content %}
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="tile hot"><div class="k">Owed in total</div><div class="v num">{{ total|gbp }}</div><div class="muted">{{ debts|length }} open debts</div></div></div>
-  <div class="col-6 col-md-3"><div class="tile"><div class="k">Charging interest</div><div class="v num {% if interest_total %}bad{% endif %}">{{ interest_total|gbp }}</div><div class="muted">{% if interest_monthly %}≈ {{ interest_monthly|gbp }} a month{% else %}no APR entered yet{% endif %}</div></div></div>
-  <div class="col-6 col-md-3"><div class="tile"><div class="k">Debt payments</div><div class="v num">{{ t.debt_pay|gbp }}</div><div class="muted">every month</div></div></div>
-  <div class="col-6 col-md-3"><div class="tile"><div class="k">Budget left over</div><div class="v num {% if t.left < 0 %}bad{% else %}good{% endif %}">{{ t.left|gbp }}</div><div class="muted">after everything</div></div></div>
-</div>
-
-<h2 class="h5">Due in the next 14 days</h2>
-<div class="mb-4">
-{% for diff, d in due %}
-  <div class="due-card">
-    <div class="when">{% if diff == 0 %}Today{% else %}{{ diff }}d{% endif %}</div>
-    <div class="who"><div>{{ d.name }}</div><div class="muted num">{{ d.monthly|gbp:2 }}</div></div>
-    <form method="post" action="{% url 'quick_pay' d.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Paid</button></form>
-    <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}" title="Different amount">…</a>
+<section class="hero">
+  <div class="big">{{ total|gbp }}<small>to zero</small></div>
+  <div class="sub">{{ debts|length }} open debts · {{ t.debt_pay|gbp }} a month in payments{% if interest_total %} · <span class="bad">{{ interest_total|gbp }} charging interest</span>{% endif %}</div>
+  <div class="rail"><i style="width: {{ progress }}%"></i></div>
+  <div class="muted" style="margin-top:.3rem">{{ progress }}% of what you started with is paid</div>
+  <div class="facts">
+    <div class="fact"><div class="v {% if t.left < 0 %}bad{% else %}good{% endif %}">{{ t.left|gbp }}</div><div class="k">left over each month</div></div>
+    <div class="fact"><div class="v">{% if plan_total_clear %}{{ plan_total_clear|date:"M Y" }}{% else %}—{% endif %}</div><div class="k">clear, with the plan</div></div>
+    <div class="fact"><div class="v {% if interest_monthly %}bad{% endif %}">{% if interest_monthly %}{{ interest_monthly|gbp }}{% else %}£0{% endif %}</div><div class="k">interest a month</div></div>
   </div>
-{% empty %}<p class="muted">Nothing due in the next two weeks.</p>{% endfor %}
-{% if done %}<p class="muted small mb-1">Paid this month:</p><p class="small">{% for d in done %}<span class="badge text-bg-light border me-1">✓ {{ d.name }}</span>{% endfor %}</p>{% endif %}
+</section>
+
+<h2>Due in the next two weeks</h2>
+<div class="list">
+{% for diff, d in due %}
+  <div class="row-item">
+    <div class="when">{% if diff == 0 %}Today{% else %}{{ diff }} day{{ diff|pluralize }}{% endif %}</div>
+    <div class="who"><div class="n1">{{ d.name }}</div><div class="n2 num">{{ d.monthly|gbp:2 }}</div></div>
+    <div class="acts">
+      <form method="post" action="{% url 'quick_pay' d.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet">Paid</button></form>
+      <a class="btn btn-sm btn-quiet btn-icon" href="{% url 'payments' %}?debt={{ d.pk }}" aria-label="Log a different amount for {{ d.name }}">…</a>
+    </div>
+  </div>
+{% empty %}<p class="muted py-3">Nothing due in the next two weeks.</p>{% endfor %}
 </div>
-<p class="muted small">"Paid" logs the usual monthly amount dated today. Use "…" for a different amount or date.</p>
+{% if done %}<p class="muted mt-2">Paid this month: {% for d in done %}<span class="tag">✓ {{ d.name }}</span> {% endfor %}</p>{% endif %}
+<p class="muted">"Paid" logs the usual amount dated today. "…" for a different amount or date.</p>
 
-<h2 class="h5">Order of attack</h2>
-<p class="muted">Extra money goes to the top until it reaches zero. Reorder on the Debts page. "With the plan" assumes £250 a month extra from four months out — change it on Projection.</p>
-<div class="table-responsive mb-4"><table class="table table-sm align-middle">
-  <thead><tr><th>#</th><th>Debt</th><th class="n">Balance</th><th class="n">Monthly</th><th>Clears as is</th><th>With the plan</th></tr></thead>
-  <tbody>{% for d in debts %}{% if d.balance > 0 %}
-  <tr><td class="num">{{ forloop.counter }}</td><td>{{ d.name }}{% if d.apr %} <span class="badge text-bg-danger">interest</span>{% endif %}</td><td class="n num">{{ d.balance|gbp }}</td><td class="n num">{% if d.monthly %}{{ d.monthly|gbp }}{% else %}—{% endif %}</td>
-  <td>{% with m=d.months_left %}{% if m is None %}—{% else %}{{ m }} mo{% endif %}{% endwith %}</td><td>{% with c=plan_clear|get_item:d.pk %}{{ c|date:"M Y"|default:"15+ yrs" }}{% endwith %}</td></tr>
-  {% endif %}{% endfor %}</tbody></table></div>
+<h2>Order of attack</h2>
+<p class="lede">Extra money goes to the top until it hits zero, then rolls down. Reorder on Debts.</p>
+<div class="list">
+{% for d in debts %}{% if d.balance > 0 %}
+  <div class="debt">
+    <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ forloop.counter }}. {{ d.name }}{% if d.apr %} <span class="tag int">interest</span>{% endif %}</a><div class="bal">{{ d.balance|gbp }}</div></div>
+    <div class="rail {% if d.apr %}bad{% endif %}"><i style="width: {{ d.progress }}%"></i></div>
+    <div class="foot"><div class="pct">{{ d.progress }}% paid · {{ d.monthly|gbp }}/mo{% with m=d.months_left %}{% if m %} · {{ m }} mo as is{% endif %}{% endwith %}</div><div class="pct">{% with c=plan_clear|get_item:d.pk %}{% if c %}clear {{ c|date:"M Y" }}{% else %}15+ yrs{% endif %}{% endwith %}</div></div>
+  </div>
+{% endif %}{% endfor %}
+</div>
 
-{% if last %}<h2 class="h5">Last check-in · {{ last }}</h2>
-<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp:2 }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp:2 }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp:2 }}</span>{% endif %}</p>{% endif %}
+{% if last %}<h2>Last check-in · {{ last }}</h2>
+<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
 
-<h2 class="h5">Recent payments</h2>
-<ul class="list-unstyled">{% for p in recent %}<li class="muted"><span class="num">{{ p.date|date:"d M" }}</span> · {{ p.debt.name }} · <span class="num">{{ p.amount|gbp:2 }}</span>{% if p.note %} · {{ p.note }}{% endif %}</li>{% empty %}<li class="muted">None yet.</li>{% endfor %}</ul>
+<h2>Recent payments</h2>
+<div class="list">{% for p in recent %}<div class="row-item"><div class="when">{{ p.date|date:"j M" }}</div><div class="who"><div class="n1">{{ p.debt.name }}</div>{% if p.note and p.note != 'quick' %}<div class="n2">{{ p.note }}</div>{% endif %}</div><div class="amt">{{ p.amount|gbp:2 }}</div></div>{% empty %}<p class="muted py-3">None yet.</p>{% endfor %}</div>
 {% endblock %}

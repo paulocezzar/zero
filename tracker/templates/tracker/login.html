@@ -1,13 +1,14 @@
-{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Sign in · Zero{% endblock %}
+{% extends "tracker/base.html" %}{% block title %}Sign in · Zero{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-md-5">
-<h1 class="h4 mb-3">Sign in</h1>
-{% if form.errors %}<div class="alert alert-danger py-2">Wrong username or password.</div>{% endif %}
-<form method="post">{% csrf_token %}
-  <div class="mb-3"><label class="form-label" for="id_username">Username</label><input class="form-control" id="id_username" name="username" autocomplete="username" autofocus required></div>
-  <div class="mb-3"><label class="form-label" for="id_password">Password</label><input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required></div>
+<div class="mx-auto" style="max-width: 22rem; padding-top: 2rem;">
+<h1>Sign in</h1>
+<p class="lede">Your debts, payments and the month.</p>
+{% if form.errors %}<div class="alert alert-danger py-2">That username and password don't match.</div>{% endif %}
+<form method="post" class="row g-2">{% csrf_token %}
+  <div class="col-12"><label class="form-label" for="id_username">Username</label><input class="form-control" id="id_username" name="username" autocomplete="username" autofocus required></div>
+  <div class="col-12"><label class="form-label" for="id_password">Password</label><input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required></div>
   <input type="hidden" name="next" value="{{ next }}">
-  <button class="btn btn-accent w-100">Sign in</button>
+  <div class="col-12 mt-3"><button class="btn btn-accent w-100">Sign in</button></div>
 </form>
-</div></div>
+</div>
 {% endblock %}

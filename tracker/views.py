@@ -57,7 +57,12 @@ def overview(request):
     plan = projection.simulate(debts, start=_first_of_month(), extra=Decimal("250"), extra_from=projection.add_months(_first_of_month(), 4))
     plan_clear = {s.debt_id: s.clear for s in plan.debts}
     last = MonthCheckin.objects.first()
+    start_total = sum(((d.starting_balance or d.balance) for d in debts), ZERO)
+    total = sum((d.balance for d in debts), ZERO)
+    progress = int(100 - total / start_total * 100) if start_total > 0 else 0
     ctx = {
+        "progress": max(0, min(100, progress)),
+        "plan_total_clear": plan.last_month if plan.all_clear else None,
         "total": sum((d.balance for d in debts), ZERO),
         "interest_total": sum((d.balance for d in interest_debts), ZERO),
         "interest_monthly": sum((d.monthly_interest for d in interest_debts), ZERO),

@@ -1,21 +1,26 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}This month · Zero{% endblock %}
 {% block content %}
-<h1 class="h4">Monthly check-in</h1>
-<p class="muted">Three numbers on the 5th of each month. Left over = take-home + extra − fixed lines ({{ t.fixed|gbp }}) − debt payments ({{ t.debt_pay|gbp }}) − everyday actual.</p>
-<form method="post" class="row g-2 align-items-end mb-3">{% csrf_token %}
-  <div class="col-6 col-md-2"><label class="form-label">Month</label>{{ form.month }}</div>
-  <div class="col-6 col-md-2"><label class="form-label">Take-home £</label>{{ form.income }}</div>
-  <div class="col-6 col-md-2"><label class="form-label">Extra income £</label>{{ form.extra_income }}</div>
-  <div class="col-6 col-md-2"><label class="form-label">Everyday actual £</label>{{ form.everyday }}</div>
-  <div class="col-6 col-md-2"><label class="form-label">Starling on the 3rd £</label>{{ form.starling_on_3rd }}</div>
-  <div class="col-6 col-md-2"><label class="form-label">Aqua balance £</label>{{ form.aqua_balance }}</div>
-  <div class="col-12 col-md-10"><label class="form-label">Note</label>{{ form.note }}</div>
-  <div class="col-12 col-md-2"><button class="btn btn-accent w-100">Save month</button></div>
-  {% for f in form %}{% for e in f.errors %}<div class="text-danger small">{{ f.label }}: {{ e }}</div>{% endfor %}{% endfor %}
+<h1>Monthly check-in</h1>
+<p class="lede">Three numbers on the 5th. Left over is take-home plus extra, minus fixed lines ({{ t.fixed|gbp }}), debt payments ({{ t.debt_pay|gbp }}) and everyday spending.</p>
+<form method="post" class="panel row g-2 mb-3">{% csrf_token %}
+  <div class="col-6"><label class="form-label">Month</label>{{ form.month }}</div>
+  <div class="col-6"><label class="form-label">Take-home £</label>{{ form.income }}</div>
+  <div class="col-6"><label class="form-label">Extra income £</label>{{ form.extra_income }}</div>
+  <div class="col-6"><label class="form-label">Everyday spend £</label>{{ form.everyday }}</div>
+  <div class="col-6"><label class="form-label">Starling on the 3rd £</label>{{ form.starling_on_3rd }}</div>
+  <div class="col-6"><label class="form-label">Aqua balance £</label>{{ form.aqua_balance }}</div>
+  <div class="col-12"><label class="form-label">Note</label>{{ form.note }}</div>
+  <div class="col-12"><button class="btn btn-accent w-100">Save month</button></div>
+  {% for f in form %}{% for e in f.errors %}<div class="col-12 text-danger small">{{ f.label }}: {{ e }}</div>{% endfor %}{% endfor %}
 </form>
-<div class="table-responsive"><table class="table table-sm align-middle">
-  <thead><tr><th>Month</th><th class="n">Take-home</th><th class="n">Extra</th><th class="n">Everyday</th><th class="n">Left over</th><th class="n">Aqua</th><th class="n">Starling 3rd</th><th></th></tr></thead>
-  <tbody>{% for m in months %}<tr><td>{{ m }}</td><td class="n num">{{ m.income|gbp }}</td><td class="n num">{{ m.extra_income|gbp }}</td><td class="n num">{{ m.everyday|gbp }}</td><td class="n num {% if m.left_over < 0 %}bad{% else %}good{% endif %}">{{ m.left_over|gbp }}</td><td class="n num">{% if m.aqua_balance != None %}{{ m.aqua_balance|gbp }}{% else %}—{% endif %}</td><td class="n num">{% if m.starling_on_3rd != None %}{{ m.starling_on_3rd|gbp }}{% else %}—{% endif %}</td><td class="text-end"><a class="btn btn-sm btn-outline-secondary py-0" href="?edit={{ m.pk }}">Edit</a></td></tr>
-  {% empty %}<tr><td colspan="8" class="muted">No months saved yet.</td></tr>{% endfor %}</tbody></table></div>
-<p class="muted">Aqua must fall every month; Starling on the 3rd must stay positive.</p>
+<div class="list">
+{% for m in months %}
+  <div class="debt">
+    <div class="head"><span class="name">{{ m }}</span><div class="bal {% if m.left_over < 0 %}bad{% else %}good{% endif %}">{{ m.left_over|gbp }}</div></div>
+    <div class="meta"><span>in {{ m.income|gbp }}{% if m.extra_income %} + {{ m.extra_income|gbp }} extra{% endif %}</span><span>everyday {{ m.everyday|gbp }}</span>{% if m.aqua_balance != None %}<span>Aqua {{ m.aqua_balance|gbp }}</span>{% endif %}{% if m.starling_on_3rd != None %}<span>Starling 3rd {{ m.starling_on_3rd|gbp }}</span>{% endif %}</div>
+    <div class="foot"><div class="pct">{{ m.note }}</div><div class="acts"><a class="btn btn-sm btn-quiet" href="?edit={{ m.pk }}">Edit</a></div></div>
+  </div>
+{% empty %}<p class="muted py-3">No months saved yet. The first one is this month.</p>{% endfor %}
+</div>
+<p class="muted mt-2">Aqua must fall every month. Starling on the 3rd must stay positive.</p>
 {% endblock %}

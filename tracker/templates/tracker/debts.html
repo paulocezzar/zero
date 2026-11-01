@@ -1,30 +1,23 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Debts · Zero{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-2"><h1 class="h4 m-0">Debts</h1><a class="btn btn-accent btn-sm" href="{% url 'debt_new' %}">Add</a></div>
-<p class="muted">Balance is what the creditor says today. Logging a payment reduces it; correct it from a statement any time.</p>
-<div class="d-md-none">
+<div class="d-flex justify-content-between align-items-center"><h1>Debts</h1><a class="btn btn-sm btn-accent" href="{% url 'debt_new' %}">Add a debt</a></div>
+<p class="lede">Balance is what the creditor says today. Logging a payment reduces it; correct it from a statement any time.</p>
+<div class="list">
 {% for d in debts %}
-  <div class="debt-card {% if d.closed %}opacity-50{% endif %}">
-    <div class="row-top"><a href="{% url 'debt_edit' d.pk %}" class="text-decoration-none fw-semibold">{{ d.name }}</a><span class="bal num">{{ d.balance|gbp:2 }}</span></div>
-    <div class="meta"><span>{{ d.monthly|gbp }}/mo</span><span>day {{ d.pay_day }}</span>{% if d.apr %}<span class="text-danger">{{ d.apr }}% APR</span>{% endif %}{% with m=d.months_left %}{% if m is not None %}<span>{{ m }} mo left</span>{% endif %}{% endwith %}<span>#{{ forloop.counter }} {{ d.get_kind_display }}</span></div>
-    <div class="acts">
-      <form method="post" action="{% url 'debt_move' d.pk 'up' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" {% if forloop.first %}disabled{% endif %}>↑</button></form>
-      <form method="post" action="{% url 'debt_move' d.pk 'down' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" {% if forloop.last %}disabled{% endif %}>↓</button></form>
-      <a class="btn btn-sm btn-outline-secondary ms-auto" href="{% url 'payments' %}?debt={{ d.pk }}">Pay</a>
-      <a class="btn btn-sm btn-outline-secondary" href="{% url 'debt_edit' d.pk %}">Edit</a>
+  <div class="debt {% if d.closed %}opacity-50{% endif %}">
+    <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ d.name }} <span class="tag {% if d.apr %}int{% elif d.kind == 'family' %}fam{% endif %}">{{ d.get_kind_display }}{% if d.apr %} · {{ d.apr }}%{% endif %}</span>{% if d.closed %} <span class="tag">closed</span>{% endif %}</a><div class="bal">{{ d.balance|gbp:2 }}</div></div>
+    <div class="meta"><span>{{ d.monthly|gbp }} on day {{ d.pay_day }}</span>{% with m=d.months_left %}{% if m is not None %}<span>{{ m }} months left</span>{% endif %}{% endwith %}{% if d.note %}<span class="d-none d-md-inline">{{ d.note }}</span>{% endif %}</div>
+    <div class="rail {% if d.apr %}bad{% endif %}"><i style="width: {{ d.progress }}%"></i></div>
+    <div class="foot">
+      <div class="pct">{{ d.progress }}% paid of {{ d.starting_balance|gbp }}</div>
+      <div class="acts">
+        <form method="post" action="{% url 'debt_move' d.pk 'up' %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" {% if forloop.first %}disabled{% endif %} aria-label="Move up">↑</button></form>
+        <form method="post" action="{% url 'debt_move' d.pk 'down' %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" {% if forloop.last %}disabled{% endif %} aria-label="Move down">↓</button></form>
+        <a class="btn btn-sm btn-quiet" href="{% url 'payments' %}?debt={{ d.pk }}">Pay</a>
+        <a class="btn btn-sm btn-quiet" href="{% url 'debt_edit' d.pk %}">Edit</a>
+      </div>
     </div>
   </div>
-{% empty %}<p class="muted">No debts yet.</p>{% endfor %}
+{% empty %}<p class="muted py-3">No debts yet. Add the first one.</p>{% endfor %}
 </div>
-<div class="table-responsive d-none d-md-block"><table class="table table-sm align-middle">
-  <thead><tr><th>Priority</th><th>Debt</th><th class="n">Balance</th><th class="n">Monthly</th><th class="n">APR</th><th>Day</th><th class="n">Months left</th><th></th></tr></thead>
-  <tbody>{% for d in debts %}
-  <tr class="{% if d.closed %}text-muted{% endif %}">
-    <td class="text-nowrap"><form method="post" action="{% url 'debt_move' d.pk 'up' %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary py-0" {% if forloop.first %}disabled{% endif %}>↑</button></form>
-      <form method="post" action="{% url 'debt_move' d.pk 'down' %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary py-0" {% if forloop.last %}disabled{% endif %}>↓</button></form></td>
-    <td><a href="{% url 'debt_edit' d.pk %}" class="text-decoration-none">{{ d.name }}</a> <span class="badge {% if d.apr %}text-bg-danger{% elif d.kind == 'family' %}text-bg-info{% else %}text-bg-light border{% endif %}">{{ d.get_kind_display }}{% if d.apr %} · interest{% endif %}</span>{% if d.closed %} <span class="badge text-bg-secondary">closed</span>{% endif %}{% if d.note %}<div class="muted d-none d-md-block">{{ d.note }}</div>{% endif %}</td>
-    <td class="n num">{{ d.balance|gbp:2 }}</td><td class="n num">{{ d.monthly|gbp:2 }}</td><td class="n num">{% if d.apr %}{{ d.apr }}%{% else %}—{% endif %}</td><td class="num">{{ d.pay_day }}</td>
-    <td class="n num">{% with m=d.months_left %}{% if m is None %}—{% else %}{{ m }}{% endif %}{% endwith %}</td>
-    <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}">Pay</a> <a class="btn btn-sm btn-outline-secondary" href="{% url 'debt_edit' d.pk %}">Edit</a></td>
-  </tr>{% empty %}<tr><td colspan="8" class="muted">No debts yet.</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}
