@@ -310,3 +310,26 @@ class AccountTests(TestCase):
         self.client.force_login(self.user)
         self.client.post(reverse("account_email"), {"email": "new@example.com"})
         self.user.refresh_from_db(); self.assertEqual(self.user.email, "new@example.com")
+
+
+class OnboardingTests(TestCase):
+    def test_new_user_sees_start_here_until_done(self):
+        u = get_user_model().objects.create_user("n", password="x" * 12)
+        self.client.force_login(u)
+        r = self.client.get(reverse("overview"))
+        self.assertContains(r, "Start here")
+        self.assertEqual(sum(1 for s in r.context["start"] if s["done"]), 0)
+        d = Debt.objects.create(owner=u, name="A", balance=Decimal("100"), monthly=Decimal("10"))
+        BudgetLine.objects.create(owner=u, item="Pay", group="income", amount=Decimal("1000"))
+        BudgetLine.objects.create(owner=u, item="Rent", group="home", amount=Decimal("-500"))
+        r = self.client.get(reverse("overview"))
+        self.assertEqual(sum(1 for s in r.context["start"] if s["done"]), 2)
+        self.client.post(reverse("quick_pay", args=[d.pk]))
+        r = self.client.get(reverse("overview"))
+        self.assertIsNone(r.context["start"])
+        self.assertNotContains(r, "Start here")
+
+    def test_auth_pages_have_no_header(self):
+        r = self.client.get(reverse("login"))
+        self.assertNotContains(r, 'class="brand"')
+        self.assertContains(r, "Everything you owe")

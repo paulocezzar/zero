@@ -123,6 +123,21 @@ def paid_streak(user, debts):
     return streak
 
 
+def start_steps(user, debts):
+    """First-run checklist; None once every step is done."""
+    has_debt = bool(debts) or Debt.objects.filter(owner=user).exists()
+    lines = BudgetLine.objects.filter(owner=user)
+    has_income = lines.filter(amount__gt=0).exists()
+    has_bill = lines.filter(amount__lt=0).exists()
+    has_payment = Payment.objects.filter(debt__owner=user).exists()
+    steps = [
+        {"done": has_debt, "n1": "Add what you owe", "n2": "Every card, loan, collector, and anyone you owe money to. Balance, monthly payment, APR if it charges interest.", "url": "debt_new", "cta": "Add a debt"},
+        {"done": has_income and has_bill, "n1": "Add your income and bills", "n2": "Take-home pay as a positive line, rent and bills as negatives with the day they leave. Estimates are fine for groceries and fuel.", "url": "budget", "cta": "Open Budget"},
+        {"done": has_payment, "n1": "Log your first payment", "n2": "When a payment goes out, tap Paid on Home. Balances fall, the debt-free date moves, the history starts.", "url": "payments", "cta": "Log a payment"},
+    ]
+    return None if all(x["done"] for x in steps) else steps
+
+
 # ---------- overview ----------
 
 def overview(request):
@@ -216,6 +231,7 @@ def overview(request):
         "road": road, "prev_clear": prev_clear, "bill_groups": bill_groups, "history": history,
         "paid_off": start_total - total, "closed_count": Debt.objects.filter(owner=request.user, closed=True).count(),
         "daily_interest": daily_interest.quantize(Decimal("0.01")),
+        "start": start_steps(request.user, debts),
     }
     return render(request, "tracker/overview.html", ctx)
 

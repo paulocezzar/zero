@@ -1,8 +1,9 @@
 {% extends "tracker/base.html" %}{% block title %}Check your email · Zero{% endblock %}
+{% block header %}{% endblock %}
 {% block content %}
-<div class="mx-auto" style="max-width: 22rem; padding-top: 2rem;">
+<div class="auth"><div>
 <h1>Check your email</h1>
 <p>If that address is on an account, a reset link is on its way. It works for a few hours. Nothing arrived? Check spam, or the account may have no email set — in which case the person who runs this copy of Zero can reset it for you.</p>
 <p class="muted mt-3"><a href="{% url 'login' %}">Back to sign in</a></p>
-</div>
+</div></div>
 {% endblock %}

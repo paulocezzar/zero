@@ -1,12 +1,14 @@
 {% extends "tracker/base.html" %}{% block title %}Create account · Zero{% endblock %}
+{% block header %}{% endblock %}
 {% block content %}
-<div class="mx-auto" style="max-width: 22rem; padding-top: 2rem;">
-<h1>Create your account</h1>
-<p class="lede">Your debts, payments and budget stay private to this account.</p>
+<div class="auth"><div>
+<svg viewBox="0 0 112 28" aria-label="Zero" role="img" style="width:88px;height:22px;fill:var(--accent)"><rect x="0" y="0" width="48" height="28" rx="6"/><rect x="54" y="0" width="28" height="28" rx="6"/><rect x="88" y="0" width="14" height="28" rx="6"/><circle cx="108" cy="14" r="4"/></svg>
+<h1 style="margin-top:.8rem;font-size:1.7rem;line-height:1.15">Create your account</h1>
+<p class="lede">Then add what you owe, your income and bills, and Zero shows you the order it disappears in. Private to this account; nothing connects to your bank.</p>
 <form method="post" class="row g-2">{% csrf_token %}
   {% for f in form %}<div class="col-12"><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
   <div class="col-12 mt-3"><button class="btn btn-accent w-100">Create account</button></div>
 </form>
 <p class="muted mt-3">Already have one? <a href="{% url 'login' %}">Sign in</a>.</p>
-</div>
+</div></div>
 {% endblock %}

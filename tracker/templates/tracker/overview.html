@@ -1,5 +1,13 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}
 {% block content %}
+{% if start %}
+<div class="start">
+  <h2 style="margin:0 0 .25rem">Start here</h2>
+  <p class="muted small mb-1">Three things and Zero does the rest. Each disappears once it's done.</p>
+  {% for st in start %}<div class="step {% if st.done %}done{% endif %}"><div class="dot">{% if st.done %}✓{% else %}{{ forloop.counter }}{% endif %}</div><div style="flex:1"><div class="n1">{{ st.n1 }}</div>{% if not st.done %}<div class="muted small">{{ st.n2 }}</div>{% endif %}</div>{% if not st.done %}<a class="btn btn-sm btn-accent" href="{% url st.url %}">{{ st.cta }}</a>{% endif %}</div>{% endfor %}
+</div>
+{% endif %}
+{% if debts %}
 <section class="hero hero-a">
   <div class="hero-row">
     <div>
@@ -27,6 +35,7 @@
   {% endif %}
   {% if no_apr %}<p class="small warn mt-2 mb-0">{% for d in no_apr %}<a href="{% url 'debt_edit' d.pk %}">{{ d.name }}</a> has no APR set, so its interest isn't counted yet.{% endfor %}</p>{% endif %}
 </section>
+{% endif %}
 
 <div class="three">
   <div class="card">

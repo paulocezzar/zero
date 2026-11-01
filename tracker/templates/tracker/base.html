@@ -137,6 +137,15 @@
   .chip:hover { border-color: var(--accent); color: var(--accent); }
   .chip.done { color: var(--muted); background: transparent; }
   .cat .top .n1 .of { font-size: .78rem; margin-left: .35rem; }
+  .auth { min-height: calc(100vh - 6rem); display: flex; align-items: center; justify-content: center; padding: 1rem 0; }
+  .auth > div { width: 100%; max-width: 22rem; }
+  /* start here */
+  .start { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; margin: 1.25rem 0 .5rem; }
+  .start .step { display: flex; gap: .8rem; align-items: flex-start; padding: .6rem 0; border-top: 1px solid var(--line); }
+  .start .step:first-of-type { border-top: 0; }
+  .start .step .dot { width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid var(--line); flex: none; display: grid; place-items: center; font-size: .8rem; color: var(--muted); }
+  .start .step.done .dot { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .start .step.done .n1 { color: var(--muted); text-decoration: line-through; }
   /* home, direction A */
   .hero-a { border-bottom: 1px solid var(--line); padding-bottom: 1.1rem; }
   .hero-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; }
@@ -233,7 +242,7 @@
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
+  {% block header %}<header class="top">
     <a class="brand" href="{% url 'overview' %}"><svg class="logo" viewBox="0 0 112 28" aria-hidden="true"><rect x="0" y="0" width="48" height="28" rx="6"/><rect x="54" y="0" width="28" height="28" rx="6"/><rect x="88" y="0" width="14" height="28" rx="6"/><circle cx="108" cy="14" r="4"/></svg>Zero</a>
     {% if user.is_authenticated %}
     <div class="icons">
@@ -241,7 +250,7 @@
       <a class="iconbtn {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'password_change' %}on{% endif %}" href="{% url 'profile' %}" aria-label="Profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></a>
     </div>
     {% endif %}
-  </header>
+  </header>{% endblock %}
   {% if user.is_authenticated %}
   <nav class="desk-nav">{% for name,label in nav %}<a class="{% if request.resolver_match.url_name == name %}on{% endif %}" href="{% url name %}">{{ label }}</a>{% endfor %}</nav>
   <div class="install" id="install"><div class="alert d-flex justify-content-between align-items-center py-2"><span class="small">Add Zero to your home screen</span><button class="btn btn-sm btn-accent" id="install-btn">Install</button></div></div>

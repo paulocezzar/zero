@@ -1,8 +1,9 @@
 {% extends "tracker/base.html" %}{% block title %}Sign in · Zero{% endblock %}
 {% block scripts %}<script>document.getElementById('show-pw').addEventListener('change', (e) => { document.getElementById('id_password').type = e.target.checked ? 'text' : 'password'; });</script>{% endblock %}
+{% block header %}{% endblock %}
 {% block content %}
-<div class="mx-auto" style="max-width: 22rem; padding-top: 2rem;">
-<svg viewBox="0 0 112 28" aria-label="Zero" role="img" style="width:72px;height:18px;fill:var(--accent)"><rect x="0" y="0" width="48" height="28" rx="6"/><rect x="54" y="0" width="28" height="28" rx="6"/><rect x="88" y="0" width="14" height="28" rx="6"/><circle cx="108" cy="14" r="4"/></svg>
+<div class="auth"><div>
+<svg viewBox="0 0 112 28" aria-label="Zero" role="img" style="width:88px;height:22px;fill:var(--accent)"><rect x="0" y="0" width="48" height="28" rx="6"/><rect x="54" y="0" width="28" height="28" rx="6"/><rect x="88" y="0" width="14" height="28" rx="6"/><circle cx="108" cy="14" r="4"/></svg>
 <h1 style="margin-top:.8rem;font-size:1.7rem;line-height:1.15">Everything you owe,<br>in the order it disappears.</h1>
 {% if form.errors %}<div class="alert alert-danger py-2">That username and password don't match.</div>{% endif %}
 <form method="post" class="row g-2">{% csrf_token %}
@@ -13,5 +14,5 @@
   <div class="col-12 mt-3"><button class="btn btn-accent w-100">Sign in</button></div>
 </form>
 <p class="muted mt-3"><a href="{% url 'password_reset' %}">Forgot your password?</a>{% if allow_signup %} · New here? <a href="{% url 'signup' %}">Create an account</a>.{% endif %}</p>
-</div>
+</div></div>
 {% endblock %}
