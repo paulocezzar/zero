@@ -53,6 +53,14 @@ def overview(request):
         if diff <= 14:
             due.append((diff, d))
     due.sort(key=lambda x: x[0])
+    bills = []
+    for b in BudgetLine.objects.filter(amount__lt=0, pay_day__isnull=False):
+        diff = b.pay_day - today.day
+        if diff < 0:
+            diff += 30
+        if diff <= 14:
+            bills.append((diff, b))
+    bills.sort(key=lambda x: x[0])
     interest_debts = [d for d in debts if d.apr > 0 and d.balance > 0]
     plan = projection.simulate(debts, start=_first_of_month(), extra=Decimal("250"), extra_from=projection.add_months(_first_of_month(), 4))
     plan_clear = {s.debt_id: s.clear for s in plan.debts}
@@ -66,7 +74,7 @@ def overview(request):
         "total": sum((d.balance for d in debts), ZERO),
         "interest_total": sum((d.balance for d in interest_debts), ZERO),
         "interest_monthly": sum((d.monthly_interest for d in interest_debts), ZERO),
-        "t": t, "due": due, "done": done, "debts": debts, "plan_clear": plan_clear, "last": last,
+        "t": t, "due": due, "done": done, "bills": bills, "debts": debts, "plan_clear": plan_clear, "last": last,
         "recent": Payment.objects.select_related("debt")[:8],
     }
     return render(request, "tracker/overview.html", ctx)

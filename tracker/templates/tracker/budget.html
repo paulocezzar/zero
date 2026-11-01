@@ -10,13 +10,14 @@
   <div class="col-12"><label class="form-label">Line</label>{{ form.item }}</div>
   <div class="col-6"><label class="form-label">Group</label>{{ form.group }}</div>
   <div class="col-6"><label class="form-label">£ a month</label>{{ form.amount }}</div>
-  <div class="col-12"><label class="form-label">Note</label>{{ form.note }}</div>
+  <div class="col-6"><label class="form-label">Day of month (optional)</label>{{ form.pay_day }}</div>
+  <div class="col-6"><label class="form-label">Note</label>{{ form.note }}</div>
   <div class="col-12"><button class="btn btn-accent w-100">{% if editing %}Save line{% else %}Add line{% endif %}</button></div>
 </form>
 <p class="muted">Income positive, costs negative. Debt payments come from Debts, so don't repeat them here.</p>
 {% for label, lines, total in groups %}
 <h2 class="d-flex justify-content-between"><span>{{ label }}</span><span class="num" style="font-family:var(--mono);font-size:.95rem">{{ total|gbp }}</span></h2>
-<div class="list">{% for l in lines %}<div class="row-item"><div class="who"><div class="n1">{{ l.item }}</div>{% if l.note %}<div class="n2">{{ l.note }}</div>{% endif %}</div><div class="amt">{{ l.amount|gbp:2 }}</div><div class="acts"><a class="btn btn-sm btn-quiet" href="?edit={{ l.pk }}">Edit</a><form method="post" action="{% url 'budget_delete' l.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" aria-label="Remove">×</button></form></div></div>{% endfor %}</div>
+<div class="list">{% for l in lines %}<div class="row-item"><div class="who"><div class="n1">{{ l.item }}</div><div class="n2">{% if l.pay_day %}day {{ l.pay_day }}{% endif %}{% if l.pay_day and l.note %} · {% endif %}{{ l.note }}</div></div><div class="amt">{{ l.amount|gbp:2 }}</div><div class="acts"><a class="btn btn-sm btn-quiet" href="?edit={{ l.pk }}">Edit</a><form method="post" action="{% url 'budget_delete' l.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" aria-label="Remove">×</button></form></div></div>{% endfor %}</div>
 {% endfor %}
 <p class="muted mt-3"><a href="{% url 'projection' %}">Projection</a> uses these lines and the debt payments.</p>
 {% endblock %}

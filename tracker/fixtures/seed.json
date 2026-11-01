@@ -85,78 +85,93 @@
     {
       "item": "Take-home pay (The Newt)",
       "group": "income",
-      "amount": "3304.64"
+      "amount": "3304.64",
+      "pay_day": 30
     },
     {
       "item": "Rent",
       "group": "home",
-      "amount": "-1400"
+      "amount": "-1400",
+      "pay_day": 1
     },
     {
       "item": "Sky TV",
       "group": "home",
-      "amount": "-21"
+      "amount": "-21",
+      "pay_day": 28
     },
     {
       "item": "Sky broadband",
       "group": "home",
-      "amount": "-20"
+      "amount": "-20",
+      "pay_day": 11
     },
     {
       "item": "TV licence",
       "group": "home",
-      "amount": "-16.36"
+      "amount": "-16.36",
+      "pay_day": 6
     },
     {
       "item": "Vanda — insurance element",
       "group": "family",
-      "amount": "-104.09"
+      "amount": "-104.09",
+      "pay_day": 1
     },
     {
       "item": "Parents (Wise from Starling)",
       "group": "family",
-      "amount": "-150"
+      "amount": "-150",
+      "pay_day": 1
     },
     {
       "item": "O2 ×2",
       "group": "tech",
       "amount": "-136.95",
-      "note": "Check contract end dates"
+      "note": "Check contract end dates",
+      "pay_day": 7
     },
     {
       "item": "Sky — MacBook Pro agreement",
       "group": "tech",
-      "amount": "-59"
+      "amount": "-59",
+      "pay_day": 13
     },
     {
       "item": "Sky — MacBook Air agreement",
       "group": "tech",
-      "amount": "-24.11"
+      "amount": "-24.11",
+      "pay_day": 14
     },
     {
       "item": "Netflix direct (cancel once linked to Sky)",
       "group": "subs",
-      "amount": "-12.99"
+      "amount": "-12.99",
+      "pay_day": 3
     },
     {
       "item": "Google Play, PlayStation, Apple",
       "group": "subs",
-      "amount": "-47.47"
+      "amount": "-47.47",
+      "pay_day": 10
     },
     {
       "item": "Software (Claude, ChatGPT, Google One, Proton)",
       "group": "subs",
-      "amount": "-140.67"
+      "amount": "-140.67",
+      "pay_day": 14
     },
     {
       "item": "Savings (Emergency £50 + kids £20)",
       "group": "savings",
-      "amount": "-70"
+      "amount": "-70",
+      "pay_day": 1
     },
     {
       "item": "Unite the Union",
       "group": "other",
-      "amount": "-18.59"
+      "amount": "-18.59",
+      "pay_day": 7
     },
     {
       "item": "Groceries (estimate)",

@@ -28,6 +28,12 @@
 {% if done %}<p class="muted mt-2">Paid this month: {% for d in done %}<span class="tag">✓ {{ d.name }}</span> {% endfor %}</p>{% endif %}
 <p class="muted">"Paid" logs the usual amount dated today. "…" for a different amount or date.</p>
 
+{% if bills %}<h2>Bills in the same fortnight</h2>
+<div class="list">
+{% for diff, b in bills %}<div class="row-item"><div class="when">{% if diff == 0 %}Today{% else %}{{ diff }} day{{ diff|pluralize }}{% endif %}</div><div class="who"><div class="n1">{{ b.item }}</div>{% if b.note %}<div class="n2">{{ b.note }}</div>{% endif %}</div><div class="amt">{{ b.amount|gbp:2 }}</div></div>{% endfor %}
+</div>
+<p class="muted">These leave by direct debit on their own; nothing to log. Edit them on <a href="{% url 'budget' %}">Budget</a>.</p>{% endif %}
+
 <h2>Order of attack</h2>
 <p class="lede">Extra money goes to the top until it hits zero, then rolls down. Reorder on Debts.</p>
 <div class="list">

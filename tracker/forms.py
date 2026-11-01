@@ -30,7 +30,7 @@ class PaymentForm(Bootstrap, forms.ModelForm):
 class BudgetLineForm(Bootstrap, forms.ModelForm):
     class Meta:
         model = BudgetLine
-        fields = ["item", "group", "amount", "note"]
+        fields = ["item", "group", "amount", "pay_day", "note"]
 
 
 class MonthForm(Bootstrap, forms.ModelForm):

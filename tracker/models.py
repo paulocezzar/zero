@@ -78,6 +78,7 @@ class BudgetLine(models.Model):
     item = models.CharField(max_length=80)
     group = models.CharField(max_length=10, choices=GROUPS, default="other")
     amount = models.DecimalField("£ per month (income positive, costs negative)", max_digits=9, decimal_places=2)
+    pay_day = models.PositiveSmallIntegerField("Day of month", null=True, blank=True, help_text="When it leaves (1–28); blank for spread-out spending like groceries")
     note = models.CharField(max_length=120, blank=True)
 
     class Meta:
