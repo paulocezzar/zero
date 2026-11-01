@@ -1,5 +1,6 @@
 """Settings for the Repayment Ledger. Production values come from environment variables."""
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -75,6 +76,9 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+if os.environ.get("DJANGO_DEBUG", "") == "1" or "test" in sys.argv:
+    # No hashed manifest in dev/tests; collectstatic builds it for production.
+    STORAGES["staticfiles"] = {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
 
 WHITENOISE_MANIFEST_STRICT = False  # fall back to the plain name when a file is not in the manifest (tests, dev)
 
