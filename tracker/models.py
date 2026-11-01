@@ -202,3 +202,18 @@ class SettlementOffer(models.Model):
     @property
     def pct(self):
         return int(self.amount / self.debt.balance * 100) if self.debt.balance > 0 else 0
+
+
+class Consent(models.Model):
+    """When this account accepted the terms and privacy notice, and which version."""
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="consent")
+    terms_version = models.CharField(max_length=12)
+    accepted_at = models.DateTimeField(auto_now_add=True)
+
+
+class LoginAttempt(models.Model):
+    """Failed sign-ins per username, so a password can't be guessed by brute force."""
+    key = models.CharField(max_length=160, unique=True)
+    failures = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    updated = models.DateTimeField(auto_now=True)

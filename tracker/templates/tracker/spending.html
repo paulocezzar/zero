@@ -31,7 +31,7 @@
   {% if form.errors %}<div class="col-12 small bad">{{ form.errors }}</div>{% endif %}
   <div class="col-12"><button class="btn btn-accent w-100">Log it</button></div>
 </form>
-<p class="muted">Or <a href="{% url 'import' %}">import a Starling or Aqua statement</a> and let Zero sort the lines. Budgets per category come from <a href="{% url 'budget' %}">Budget</a>.</p>
+<p class="muted">Or <a href="{% url 'import' %}">import a bank or card statement</a> and let Zero sort the lines. Budgets per category come from <a href="{% url 'budget' %}">Budget</a>.</p>
 
 <h2>By category</h2>
 {% if rails %}<div class="list">{% for r in rails %}

@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from . import projection, spending
 from .forms import BudgetLineForm, DebtForm, ImportForm, MonthForm, OfferForm, OutgoingForm, PaymentForm, ProjectionForm, SignupForm
-from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
+from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Consent, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
 
 ZERO = Decimal("0")
 
@@ -584,10 +584,16 @@ def signup(request):
     form = SignupForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
+        Consent.objects.create(owner=user, terms_version=settings.TERMS_VERSION)
         login(request, user)
-        messages.success(request, "Welcome. Start by adding your first debt, then your income and bills on Budget.")
-        return redirect("debts")
+        messages.success(request, "Welcome. Three steps on Home and you're set up.")
+        return redirect("overview")
     return render(request, "tracker/signup.html", {"form": form})
+
+
+@login_not_required
+def terms(request):
+    return render(request, "tracker/terms.html", {"version": settings.TERMS_VERSION})
 
 
 # ---------- spending ----------
@@ -662,7 +668,7 @@ def import_view(request):
         else:
             source, rows = spending.parse(f.read(), request.user.id)
             if not rows:
-                form.add_error("statement", "No spending lines found. Zero reads Starling and Aqua CSV exports, or any CSV with date, description and amount columns.")
+                form.add_error("statement", "No spending lines found. Zero reads most UK bank and card CSV exports — any file with date, description and amount columns.")
             else:
                 existing = set(Outgoing.objects.filter(owner=request.user, import_key__in=[r["key"] for r in rows]).values_list("import_key", flat=True))
                 rows = [dict(r, date=r["date"].isoformat(), amount=str(r["amount"]), seen=r["key"] in existing) for r in rows][:400]

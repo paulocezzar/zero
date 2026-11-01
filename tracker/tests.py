@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from . import spending
-from .models import BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
+from .models import BudgetLine, CalendarToken, Consent, Debt, LoginAttempt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
 
 
 class LedgerTests(TestCase):
@@ -82,7 +82,7 @@ class LedgerTests(TestCase):
         self.assertEqual(self.client.get(reverse("signup")).status_code, 404)
         with self.settings(ALLOW_SIGNUP=True):
             self.assertEqual(self.client.get(reverse("signup")).status_code, 200)
-            r = self.client.post(reverse("signup"), {"username": "newperson", "password1": "a-long-password-1", "password2": "a-long-password-1"})
+            r = self.client.post(reverse("signup"), {"username": "newperson", "password1": "a-long-password-1", "password2": "a-long-password-1", "agree": "on"})
             self.assertEqual(r.status_code, 302)
             self.assertEqual(self.client.get(reverse("debts")).status_code, 200)
 
@@ -333,3 +333,30 @@ class OnboardingTests(TestCase):
         r = self.client.get(reverse("login"))
         self.assertNotContains(r, 'class="brand"')
         self.assertContains(r, "Everything you owe")
+
+
+class OpenSignupTests(TestCase):
+    def test_lockout_after_failures(self):
+        get_user_model().objects.create_user("p", password="x" * 12)
+        for _ in range(6):
+            self.client.post(reverse("login"), {"username": "p", "password": "wrong-wrong"})
+        self.assertIsNotNone(LoginAttempt.objects.get(key="p").locked_until)
+        r = self.client.post(reverse("login"), {"username": "p", "password": "x" * 12})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Too many tries")
+        LoginAttempt.objects.all().delete()
+        r = self.client.post(reverse("login"), {"username": "p", "password": "x" * 12})
+        self.assertEqual(r.status_code, 302)
+
+    def test_signup_needs_consent_and_records_it(self):
+        from django.test import override_settings
+        with override_settings(ALLOW_SIGNUP=True):
+            self.assertEqual(self.client.get(reverse("terms")).status_code, 200)
+            r = self.client.post(reverse("signup"), {"username": "new", "email": "", "password1": "a-long-passw0rd", "password2": "a-long-passw0rd"})
+            self.assertEqual(r.status_code, 200)
+            self.assertFalse(get_user_model().objects.filter(username="new").exists())
+            r = self.client.post(reverse("signup"), {"username": "new", "email": "", "password1": "a-long-passw0rd", "password2": "a-long-passw0rd", "agree": "on", "website": "spam"})
+            self.assertFalse(get_user_model().objects.filter(username="new").exists())
+            r = self.client.post(reverse("signup"), {"username": "new", "email": "", "password1": "a-long-passw0rd", "password2": "a-long-passw0rd", "agree": "on"})
+            self.assertRedirects(r, reverse("overview"))
+            self.assertEqual(Consent.objects.get(owner__username="new").terms_version, "2026-11-01")

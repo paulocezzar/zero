@@ -6,7 +6,8 @@
 <h1 style="margin-top:.8rem;font-size:1.7rem;line-height:1.15">Create your account</h1>
 <p class="lede">Then add what you owe, your income and bills, and Zero shows you the order it disappears in. Private to this account; nothing connects to your bank.</p>
 <form method="post" class="row g-2">{% csrf_token %}
-  {% for f in form %}<div class="col-12"><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endfor %}
+  {% for f in form %}{% if f.name == 'website' %}{{ f }}{% elif f.name == 'agree' %}<div class="col-12"><div class="form-check mt-1"><input class="form-check-input" type="checkbox" name="agree" id="id_agree" {% if f.value %}checked{% endif %}><label class="form-check-label" for="id_agree">I've read the <a href="{% url 'terms' %}">terms</a> and the <a href="{% url 'privacy' %}">privacy notice</a></label></div>{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% else %}<div class="col-12"><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% if f.help_text %}<div class="muted small">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>{% endif %}{% endfor %}
+  {% for e in form.non_field_errors %}<div class="col-12 text-danger small">{{ e }}</div>{% endfor %}
   <div class="col-12 mt-3"><button class="btn btn-accent w-100">Create account</button></div>
 </form>
 <p class="muted mt-3">Already have one? <a href="{% url 'login' %}">Sign in</a>.</p>

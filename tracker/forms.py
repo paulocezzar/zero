@@ -1,5 +1,7 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from datetime import timedelta
+
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 from .models import BudgetLine, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer
 
@@ -59,9 +61,45 @@ class ProjectionForm(Bootstrap, forms.Form):
 
 class SignupForm(Bootstrap, UserCreationForm):
     email = forms.EmailField(required=False, help_text="Optional — only used to reset your password")
+    agree = forms.BooleanField(label="I've read the terms and the privacy notice", error_messages={"required": "You need to accept the terms to create an account."})
+    website = forms.CharField(required=False, widget=forms.HiddenInput)  # honeypot: humans never fill this
 
     class Meta(UserCreationForm.Meta):
         fields = ("username", "email")
+
+    def clean_website(self):
+        if self.cleaned_data.get("website"):
+            raise forms.ValidationError("Something went wrong. Try again.")
+        return ""
+
+
+class LockoutAuthenticationForm(AuthenticationForm):
+    """Standard sign-in form with a per-username lockout after repeated failures."""
+
+    def clean(self):
+        from django.conf import settings as st
+        from django.utils import timezone
+        from .models import LoginAttempt
+        key = (self.cleaned_data.get("username") or "").strip().lower()[:160]
+        attempt = LoginAttempt.objects.filter(key=key).first() if key else None
+        if attempt and attempt.locked_until and attempt.locked_until > timezone.now():
+            mins = int((attempt.locked_until - timezone.now()).total_seconds() // 60) + 1
+            raise forms.ValidationError(f"Too many tries. Locked for {mins} more minute{'s' if mins != 1 else ''}.", code="locked")
+        try:
+            data = super().clean()
+        except forms.ValidationError:
+            if key:
+                attempt, _ = LoginAttempt.objects.get_or_create(key=key)
+                attempt.failures += 1
+                if attempt.failures >= st.LOGIN_MAX_FAILURES:
+                    attempt.locked_until = timezone.now() + timedelta(minutes=st.LOGIN_LOCK_MINUTES)
+                    attempt.failures = 0
+                attempt.save()
+            raise
+        if attempt:
+            attempt.delete()
+        return data
+
 
 
 class OutgoingForm(Bootstrap, forms.ModelForm):

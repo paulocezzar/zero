@@ -19,8 +19,11 @@
 <h2>Your controls</h2>
 <p>From <a href="{% url 'profile' %}">Profile</a> you can export everything as CSV files, change your password{% if email_configured %}, reset it by email{% endif %}, reset your calendar link, and delete the account — which removes every row attached to it, immediately.</p>
 
+<h2>How long</h2>
+<p>For as long as the account exists. Delete the account and every row goes with it immediately; the host's own database backups roll off within a few days. Failed sign-in counts are kept for 15 minutes.</p>
+
 <h2>Cookies</h2>
 <p>One session cookie to keep you signed in and one CSRF cookie to protect forms. Theme and privacy-blur choices are kept in your browser's own storage, not on the server.</p>
-<p class="muted small">Questions or a request about your data: contact whoever gave you access to this Zero.</p>
+<p class="muted small">Questions or a request about your data: contact whoever gave you access to this Zero. See also the <a href="{% url 'terms' %}">terms</a>.</p>
 </div>
 {% endblock %}

@@ -88,7 +88,7 @@
 </div>{% endif %}
 
 {% if last %}<h2>Last check-in · {{ last }}</h2>
-<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
+<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · card <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · bank after pay day <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
 </div>
 
 <div class="col-side">

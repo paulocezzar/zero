@@ -8,8 +8,8 @@
   <div class="col-6"><label class="form-label">Take-home £</label>{{ form.income }}</div>
   <div class="col-6"><label class="form-label">Extra income £</label>{{ form.extra_income }}</div>
   <div class="col-6"><label class="form-label">Everyday spend £</label>{{ form.everyday }}</div>
-  <div class="col-6"><label class="form-label">Starling on the 3rd £</label>{{ form.starling_on_3rd }}</div>
-  <div class="col-6"><label class="form-label">Aqua balance £</label>{{ form.aqua_balance }}</div>
+  <div class="col-6"><label class="form-label">Bank balance after pay day £</label>{{ form.starling_on_3rd }}</div>
+  <div class="col-6"><label class="form-label">Credit card balance £</label>{{ form.aqua_balance }}</div>
   <div class="col-12"><label class="form-label">Note</label>{{ form.note }}</div>
   <div class="col-12"><button class="btn btn-accent w-100">Save month</button></div>
   {% for f in form %}{% for e in f.errors %}<div class="col-12 text-danger small">{{ f.label }}: {{ e }}</div>{% endfor %}{% endfor %}
@@ -20,11 +20,11 @@
 {% for m in months %}
   <div class="debt">
     <div class="head"><span class="name">{{ m }}</span><div class="bal {% if m.left_over < 0 %}bad{% else %}good{% endif %}">{{ m.left_over|gbp }}</div></div>
-    <div class="meta"><span>in {{ m.income|gbp }}{% if m.extra_income %} + {{ m.extra_income|gbp }} extra{% endif %}</span><span>everyday {{ m.everyday|gbp }}</span>{% if m.aqua_balance != None %}<span>Aqua {{ m.aqua_balance|gbp }}</span>{% endif %}{% if m.starling_on_3rd != None %}<span>Starling 3rd {{ m.starling_on_3rd|gbp }}</span>{% endif %}</div>
+    <div class="meta"><span>in {{ m.income|gbp }}{% if m.extra_income %} + {{ m.extra_income|gbp }} extra{% endif %}</span><span>everyday {{ m.everyday|gbp }}</span>{% if m.aqua_balance != None %}<span>card {{ m.aqua_balance|gbp }}</span>{% endif %}{% if m.starling_on_3rd != None %}<span>bank after pay day {{ m.starling_on_3rd|gbp }}</span>{% endif %}</div>
     <div class="foot"><div class="pct">{{ m.note }}</div><div class="acts"><a class="btn btn-sm btn-quiet" href="?edit={{ m.pk }}">Edit</a></div></div>
   </div>
 {% empty %}<p class="muted py-3">No months saved yet. The first one is this month.</p>{% endfor %}
 </div>
-<p class="muted mt-2">Aqua must fall every month. Starling on the 3rd must stay positive.</p>
+<p class="muted mt-2">The card balance should fall every month. The bank balance after pay day should stay positive.</p>
 </div></div>
 {% endblock %}

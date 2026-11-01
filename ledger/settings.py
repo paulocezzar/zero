@@ -124,3 +124,7 @@ else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_FROM", "Zero <no-reply@zero.local>")
 EMAIL_CONFIGURED = _email.startswith("smtp://")
+
+TERMS_VERSION = "2026-11-01"
+LOGIN_MAX_FAILURES = 6
+LOGIN_LOCK_MINUTES = 15

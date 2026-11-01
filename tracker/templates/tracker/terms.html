@@ -1,0 +1,26 @@
+{% extends "tracker/base.html" %}{% block title %}Terms · Zero{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 40rem;">
+<h1>Terms</h1>
+<p class="lede">Short, because there isn't much to say. Version {{ version }}.</p>
+
+<h2>What Zero is</h2>
+<p>A tool for keeping track of what you owe and planning how to pay it off. It does sums on the figures you give it. It is not financial advice, it is not regulated, and it doesn't know your circumstances. Decisions about payments, settlements, credit cards and anything else are yours; talk to a free debt charity such as StepChange or National Debtline if you're unsure.</p>
+
+<h2>Your account</h2>
+<p>You're responsible for keeping your password to yourself. Zero asks for a 12-character minimum and locks an account briefly after repeated wrong guesses. You can change your email and password, export everything, and delete the account from Profile at any time.</p>
+
+<h2>Your data</h2>
+<p>It's yours. Zero stores what you type so it can show it back to you, and nothing else — see the <a href="{% url 'privacy' %}">privacy notice</a> for exactly what, where and for how long. No selling, no sharing, no bank connections.</p>
+
+<h2>Accuracy</h2>
+<p>Projections assume the figures you've entered are right and that nothing changes. Interest, fees and creditor behaviour in the real world will differ. Treat the dates and totals as a guide, not a promise.</p>
+
+<h2>Availability</h2>
+<p>Zero is run by one person as a side project. It's provided as it is, without a guarantee of uptime, and it may change or close with notice by email to the address on your account, in which case you'll have time to export your data first.</p>
+
+<h2>Changes</h2>
+<p>If these terms change in a way that matters, you'll see the new version and be asked to accept it on your next sign-in.</p>
+<p class="muted small">England and Wales law applies. Questions: contact whoever gave you access to this Zero.</p>
+</div>
+{% endblock %}

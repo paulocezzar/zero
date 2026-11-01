@@ -17,6 +17,7 @@ urlpatterns = [
     path("me/export/", views.account_export, name="account_export"),
     path("me/delete/", views.account_delete, name="account_delete"),
     path("privacy/", views.privacy, name="privacy"),
+    path("terms/", views.terms, name="terms"),
     path("signup/", views.signup, name="signup"),
     path("pay/<int:pk>/", views.quick_pay, name="quick_pay"),
     path("pay/all/", views.quick_pay_all, name="quick_pay_all"),
