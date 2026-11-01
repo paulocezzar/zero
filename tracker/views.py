@@ -278,7 +278,11 @@ def payment_list(request):
         record_snapshot(request.user)
         messages.success(request, f"Logged £{p.amount} to {p.debt.name}.")
         return redirect("payments")
-    return render(request, "tracker/payments.html", {"form": form, "payments": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:300]})
+    paid_ids = set(Payment.objects.filter(debt__owner=request.user, date__gte=_first_of_month()).values_list("debt_id", flat=True))
+    usual = [d for d in open_debts(request.user) if d.monthly > 0 and d.balance > 0]
+    for d in usual:
+        d.paid = d.id in paid_ids
+    return render(request, "tracker/payments.html", {"form": form, "payments": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:300], "usual": usual})
 
 
 @require_POST
@@ -450,8 +454,8 @@ def quick_pay(request, pk):
         record_snapshot(request.user)
         messages.success(request, f"Logged £{d.monthly} to {d.name}.")
     else:
-        messages.info(request, f"{d.name} is already logged this month. Use Pay for an extra payment.")
-    return redirect("overview")
+        messages.info(request, f"{d.name} is already logged this month. Use the form for an extra payment.")
+    return redirect("payments" if request.GET.get("next") == "payments" else "overview")
 
 
 @require_POST

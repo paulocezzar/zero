@@ -5,16 +5,20 @@
   <h1>{{ first|date:"F Y" }}</h1>
   <a class="{% if not next %}off{% endif %}" href="{% if next %}?m={{ next|date:'Y-m' }}{% endif %}" aria-label="Next month">›</a>
 </div>
-<div class="hero">
-  <div class="big num {% if left < 0 %}bad{% endif %}">{{ total|gbp }}</div>
-  <div class="muted">everyday spending{% if budget %} of {{ budget|gbp }} budgeted{% endif %}{% if is_current and days_left %} · {{ days_left }} day{{ days_left|pluralize }} left{% endif %}</div>
-  {% if budget %}<div class="rail {% if left < 0 %}bad{% endif %}"><i style="width:{% widthratio total budget 100 %}%"></i></div>
-  <div class="facts mt-3">
-    <div class="fact"><div class="v {% if left < 0 %}bad{% else %}good{% endif %}">{{ left|gbp }}</div><div class="k">{% if left < 0 %}over{% else %}left{% endif %}</div></div>
-    {% if is_current and days_left and left > 0 %}<div class="fact"><div class="v">{% widthratio left days_left 1 as perday %}£{{ perday }}</div><div class="k">a day to stay on track</div></div>{% endif %}
-    <div class="fact"><div class="v">{{ items|length }}</div><div class="k">line{{ items|length|pluralize }}</div></div>
-  </div>{% endif %}
-</div>
+<section class="hero hero-a">
+  <div class="hero-row">
+    <div>
+      <div class="big num {% if left < 0 %}bad{% endif %}">{{ total|gbp }}</div>
+      <div class="sub">everyday spending{% if budget %} of {{ budget|gbp }} budgeted{% endif %} · {{ items|length }} line{{ items|length|pluralize }}{% if fixed_total %} · {{ fixed_total|gbp }} in bills{% endif %}</div>
+    </div>
+    {% if budget %}<div class="hero-date">
+      <div class="k">{% if left < 0 %}over by{% else %}left{% endif %}</div>
+      <div class="when-big num {% if left < 0 %}bad{% endif %}">{{ left|gbp }}</div>
+      <div class="muted small">{% if is_current and days_left and left > 0 %}{% widthratio left days_left 1 as perday %}£{{ perday }} a day keeps you inside it · {% endif %}{% if is_current %}{{ days_left }} day{{ days_left|pluralize }} left{% else %}{{ first|date:"F" }} closed{% endif %}</div>
+    </div>{% endif %}
+  </div>
+  {% if budget %}<div class="rail {% if left < 0 %}bad{% endif %}" style="margin-top:1rem"><i style="width:{% widthratio total budget 100 %}%"></i></div>{% endif %}
+</section>
 
 <div class="cols"><div class="col-main">
 <h2>Log something</h2>
@@ -32,18 +36,16 @@
 <h2>By category</h2>
 {% if rails %}<div class="list">{% for r in rails %}
 <div class="cat {% if r.over %}over{% endif %} {% if r.nobudget %}nobudget{% endif %}">
-  <div class="top"><span class="n1">{{ r.label }}</span><span class="amt">{{ r.spent|gbp }}{% if not r.nobudget %} <span class="of">of {{ r.budget|gbp }}</span>{% endif %}</span></div>
+  <div class="top"><span class="n1">{{ r.label }} <span class="of small">{% if r.nobudget %}no budget line{% elif r.over %}{{ r.left|gbp }} over{% else %}{{ r.left|gbp }} left{% endif %}</span></span><span class="amt">{{ r.spent|gbp }}{% if not r.nobudget %} <span class="of">of {{ r.budget|gbp }}</span>{% endif %}</span></div>
   <div class="rail"><i style="width:{{ r.pct }}%"></i></div>
-  <div class="small muted mt-1">{% if r.nobudget %}no budget line for this{% elif r.over %}{{ r.left|gbp }} over{% else %}{{ r.left|gbp }} left{% endif %}</div>
 </div>{% endfor %}</div>
 {% else %}<p class="muted">Nothing logged this month yet. Add a line above or import a statement.</p>{% endif %}
-{% if fixed %}<h2 class="mt-4">Bills &amp; fixed</h2>
-<p class="muted small">These leave by direct debit, so they sit outside the everyday number above. Imported statement lines land here when they match.</p>
-<div class="list">{% for r in fixed %}
+{% if fixed %}<details class="mt-4"><summary class="muted">Bills &amp; fixed — {{ fixed_total|gbp }} logged, by direct debit, outside the everyday number</summary>
+<div class="list mt-2">{% for r in fixed %}
 <div class="cat {% if r.over %}over{% endif %}">
   <div class="top"><span class="n1">{{ r.label }}</span><span class="amt">{{ r.spent|gbp }} <span class="of">of {{ r.budget|gbp }}</span></span></div>
   <div class="rail"><i style="width:{{ r.pct }}%"></i></div>
-</div>{% endfor %}</div>{% endif %}
+</div>{% endfor %}</div></details>{% endif %}
 </div><div class="col-side">
 <h2>Lines</h2>
 {% if items %}<div class="list">{% for o in items %}

@@ -1,6 +1,8 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Pay · Zero{% endblock %}
 {% block content %}
 <h1>Log a payment</h1>
+{% if usual %}<p class="muted small mb-1">The usual amount, dated today — one tap:</p>
+<div class="chips mb-3">{% for d in usual %}<form method="post" action="{% url 'quick_pay' d.pk %}?next=payments">{% csrf_token %}<button class="chip {% if d.paid %}done{% endif %}" {% if d.paid %}disabled title="Already logged this month"{% endif %}>{{ d.name }} <span class="num">{{ d.monthly|gbp:2 }}</span>{% if d.paid %} ✓{% endif %}</button></form>{% endfor %}</div>{% endif %}
 <div class="cols"><div class="col-main">
 <form method="post" class="panel row g-2 mb-3">{% csrf_token %}
   <div class="col-6"><label class="form-label" for="id_date">Date</label>{{ form.date }}</div>
