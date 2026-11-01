@@ -186,6 +186,7 @@ class SpendingTests(TestCase):
         self.assertEqual(m.everyday, Decimal("80"))
 
     def test_overview_shows_spent(self):
+        Debt.objects.create(owner=self.user, name="A", balance=Decimal("100"), monthly=Decimal("10"))
         Outgoing.objects.create(owner=self.user, date=date.today(), amount=Decimal("12.34"), category="eating")
         r = self.client.get(reverse("overview"))
         self.assertContains(r, "Spent this month")
