@@ -12,6 +12,8 @@
   </div>
 </section>
 
+<div class="cols">
+<div class="col-main">
 <h2>Due in the next two weeks</h2>
 <div class="list">
 {% for diff, d in due %}
@@ -34,6 +36,10 @@
 </div>
 <p class="muted">These leave by direct debit on their own; nothing to log. Edit them on <a href="{% url 'budget' %}">Budget</a>.</p>{% endif %}
 
+{% if last %}<h2>Last check-in · {{ last }}</h2>
+<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
+</div>
+<div class="col-side">
 <h2>Order of attack</h2>
 <p class="lede">Extra money goes to the top until it hits zero, then rolls down. Reorder on Debts.</p>
 <div class="list">
@@ -46,9 +52,8 @@
 {% endif %}{% endfor %}
 </div>
 
-{% if last %}<h2>Last check-in · {{ last }}</h2>
-<p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
-
 <h2>Recent payments</h2>
 <div class="list">{% for p in recent %}<div class="row-item"><div class="when">{{ p.date|date:"j M" }}</div><div class="who"><div class="n1">{{ p.debt.name }}</div>{% if p.note and p.note != 'quick' %}<div class="n2">{{ p.note }}</div>{% endif %}</div><div class="amt">{{ p.amount|gbp:2 }}</div></div>{% empty %}<p class="muted py-3">None yet.</p>{% endfor %}</div>
+</div>
+</div>
 {% endblock %}

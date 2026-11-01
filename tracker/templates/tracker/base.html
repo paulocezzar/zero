@@ -40,6 +40,23 @@
   @media (min-width: 768px) { body { padding-bottom: 3rem; } }
   .wrap { max-width: 42rem; margin-inline: auto; padding-left: max(1rem, env(safe-area-inset-left, 0px)); padding-right: max(1rem, env(safe-area-inset-right, 0px)); }
   /* top bar */
+  @media (min-width: 992px) { .wrap { max-width: 70rem; } }
+  /* desktop: two columns where a page has a main list and a side list */
+  .cols { display: block; }
+  @media (min-width: 992px) {
+    .cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); column-gap: 3.5rem; align-items: start; }
+    .cols > .col-main h2:first-child, .cols > .col-side h2:first-child { margin-top: 0; }
+    .hero { padding-bottom: 1.5rem; margin-bottom: 1.75rem; }
+    .hero .big { font-size: 4.4rem; }
+    .facts { grid-template-columns: repeat(3, max-content); column-gap: 3.5rem; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 3rem; }
+    .top { padding-top: 1.4rem; }
+    .brand { font-size: 1.7rem; }
+    h1 { font-size: 1.9rem; }
+    .debt { padding: 1.1rem 0; }
+    .row-item { padding: .85rem 0; }
+    .panel { padding: 1.25rem 1.5rem; }
+  }
   .top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .9rem .4rem; }
   .brand { font-family: var(--display); font-weight: 500; font-size: 1.45rem; letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
   .brand:hover { color: var(--ink); }

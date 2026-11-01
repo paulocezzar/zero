@@ -2,6 +2,7 @@
 {% block content %}
 <h1>Monthly check-in</h1>
 <p class="lede">Three numbers on the 5th. Left over is take-home plus extra, minus fixed lines ({{ t.fixed|gbp }}), debt payments ({{ t.debt_pay|gbp }}) and everyday spending.</p>
+<div class="cols"><div class="col-main">
 <form method="post" class="panel row g-2 mb-3">{% csrf_token %}
   <div class="col-6"><label class="form-label">Month</label>{{ form.month }}</div>
   <div class="col-6"><label class="form-label">Take-home £</label>{{ form.income }}</div>
@@ -13,6 +14,8 @@
   <div class="col-12"><button class="btn btn-accent w-100">Save month</button></div>
   {% for f in form %}{% for e in f.errors %}<div class="col-12 text-danger small">{{ f.label }}: {{ e }}</div>{% endfor %}{% endfor %}
 </form>
+</div><div class="col-side">
+<h2>Months</h2>
 <div class="list">
 {% for m in months %}
   <div class="debt">
@@ -23,4 +26,5 @@
 {% empty %}<p class="muted py-3">No months saved yet. The first one is this month.</p>{% endfor %}
 </div>
 <p class="muted mt-2">Aqua must fall every month. Starling on the 3rd must stay positive.</p>
+</div></div>
 {% endblock %}

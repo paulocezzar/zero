@@ -2,7 +2,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center"><h1>Debts</h1><a class="btn btn-sm btn-accent" href="{% url 'debt_new' %}">Add a debt</a></div>
 <p class="lede">Balance is what the creditor says today. Logging a payment reduces it; correct it from a statement any time.</p>
-<div class="list">
+<div class="list grid2">
 {% for d in debts %}
   <div class="debt {% if d.closed %}opacity-50{% endif %}">
     <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ d.name }} <span class="tag {% if d.apr %}int{% elif d.kind == 'family' %}fam{% endif %}">{{ d.get_kind_display }}{% if d.apr %} · {{ d.apr }}%{% endif %}</span>{% if d.closed %} <span class="tag">closed</span>{% endif %}</a><div class="bal">{{ d.balance|gbp:2 }}</div></div>

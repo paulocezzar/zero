@@ -1,6 +1,7 @@
 {% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Pay · Zero{% endblock %}
 {% block content %}
 <h1>Log a payment</h1>
+<div class="cols"><div class="col-main">
 <form method="post" class="panel row g-2 mb-3">{% csrf_token %}
   <div class="col-6"><label class="form-label" for="id_date">Date</label>{{ form.date }}</div>
   <div class="col-6"><label class="form-label" for="id_debt">Debt</label>{{ form.debt }}</div>
@@ -10,10 +11,13 @@
   {% for e in form.non_field_errors %}<div class="col-12 text-danger small">{{ e }}</div>{% endfor %}
 </form>
 <p class="muted">Logging a payment takes it off that debt's balance. Undo puts it back.</p>
+</div><div class="col-side">
+<h2>History</h2>
 <div class="list">
 {% for p in payments %}
   <div class="row-item"><div class="when">{{ p.date|date:"j M" }}</div><div class="who"><div class="n1">{{ p.debt.name }}</div>{% if p.note and p.note != 'quick' %}<div class="n2">{{ p.note }}</div>{% endif %}</div><div class="amt">{{ p.amount|gbp:2 }}</div>
   <form method="post" action="{% url 'payment_undo' p.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet">Undo</button></form></div>
 {% empty %}<p class="muted py-3">No payments logged yet.</p>{% endfor %}
 </div>
+</div></div>
 {% endblock %}
