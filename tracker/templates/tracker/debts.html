@@ -2,7 +2,21 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-2"><h1 class="h4 m-0">Debts</h1><a class="btn btn-accent btn-sm" href="{% url 'debt_new' %}">Add</a></div>
 <p class="muted">Balance is what the creditor says today. Logging a payment reduces it; correct it from a statement any time.</p>
-<div class="table-responsive"><table class="table table-sm align-middle">
+<div class="d-md-none">
+{% for d in debts %}
+  <div class="debt-card {% if d.closed %}opacity-50{% endif %}">
+    <div class="row-top"><a href="{% url 'debt_edit' d.pk %}" class="text-decoration-none fw-semibold">{{ d.name }}</a><span class="bal num">{{ d.balance|gbp:2 }}</span></div>
+    <div class="meta"><span>{{ d.monthly|gbp }}/mo</span><span>day {{ d.pay_day }}</span>{% if d.apr %}<span class="text-danger">{{ d.apr }}% APR</span>{% endif %}{% with m=d.months_left %}{% if m is not None %}<span>{{ m }} mo left</span>{% endif %}{% endwith %}<span>#{{ forloop.counter }} {{ d.get_kind_display }}</span></div>
+    <div class="acts">
+      <form method="post" action="{% url 'debt_move' d.pk 'up' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" {% if forloop.first %}disabled{% endif %}>↑</button></form>
+      <form method="post" action="{% url 'debt_move' d.pk 'down' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" {% if forloop.last %}disabled{% endif %}>↓</button></form>
+      <a class="btn btn-sm btn-outline-secondary ms-auto" href="{% url 'payments' %}?debt={{ d.pk }}">Pay</a>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'debt_edit' d.pk %}">Edit</a>
+    </div>
+  </div>
+{% empty %}<p class="muted">No debts yet.</p>{% endfor %}
+</div>
+<div class="table-responsive d-none d-md-block"><table class="table table-sm align-middle">
   <thead><tr><th>Priority</th><th>Debt</th><th class="n">Balance</th><th class="n">Monthly</th><th class="n">APR</th><th>Day</th><th class="n">Months left</th><th></th></tr></thead>
   <tbody>{% for d in debts %}
   <tr class="{% if d.closed %}text-muted{% endif %}">

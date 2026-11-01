@@ -76,6 +76,8 @@ STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 
+WHITENOISE_MANIFEST_STRICT = False  # fall back to the plain name when a file is not in the manifest (tests, dev)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "login"

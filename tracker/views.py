@@ -203,8 +203,27 @@ def projection_view(request):
 # ---------- PWA ----------
 
 def manifest(request):
+    from django.templatetags.static import static
     return JsonResponse({
-        "name": "Zero", "short_name": "Zero", "start_url": "/", "display": "standalone",
+        "id": "/", "name": "Zero", "short_name": "Zero", "description": "Debts, payments and the month, in one place.",
+        "start_url": "/", "scope": "/", "display": "standalone", "orientation": "portrait",
         "background_color": "#f7f6f2", "theme_color": "#1f6f6a",
-        "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}],
+        "icons": [
+            {"src": static("tracker/icon-192.png"), "sizes": "192x192", "type": "image/png"},
+            {"src": static("tracker/icon-512.png"), "sizes": "512x512", "type": "image/png"},
+            {"src": static("tracker/icon-192-maskable.png"), "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+            {"src": static("tracker/icon-512-maskable.png"), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+        ],
     })
+
+
+@require_POST
+def quick_pay(request, pk):
+    """One tap from the overview: log this debt's monthly payment dated today."""
+    d = get_object_or_404(Debt, pk=pk, closed=False)
+    if d.monthly > 0:
+        with transaction.atomic():
+            Payment.objects.create(debt=d, date=date.today(), amount=d.monthly, note="quick")
+            Debt.objects.filter(pk=d.pk).update(balance=max(ZERO, d.balance - d.monthly))
+        messages.success(request, f"Logged £{d.monthly} to {d.name}.")
+    return redirect("overview")

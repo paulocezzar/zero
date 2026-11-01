@@ -8,12 +8,17 @@
 </div>
 
 <h2 class="h5">Due in the next 14 days</h2>
-<div class="table-responsive mb-4"><table class="table table-sm align-middle">
-  <thead><tr><th>When</th><th>Debt</th><th class="n">Amount</th><th></th></tr></thead>
-  <tbody>
-  {% for diff, d in due %}<tr><td>{% if diff == 0 %}Today{% else %}in {{ diff }} day{{ diff|pluralize }}{% endif %}</td><td>{{ d.name }}</td><td class="n num">{{ d.monthly|gbp:2 }}</td><td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}">Log as paid</a></td></tr>
-  {% empty %}<tr><td colspan="4" class="muted">Nothing due in the next two weeks.</td></tr>{% endfor %}
-  </tbody></table></div>
+<div class="mb-4">
+{% for diff, d in due %}
+  <div class="due-card">
+    <div class="when">{% if diff == 0 %}Today{% else %}{{ diff }}d{% endif %}</div>
+    <div class="who"><div>{{ d.name }}</div><div class="muted num">{{ d.monthly|gbp:2 }}</div></div>
+    <form method="post" action="{% url 'quick_pay' d.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Paid</button></form>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments' %}?debt={{ d.pk }}" title="Different amount">…</a>
+  </div>
+{% empty %}<p class="muted">Nothing due in the next two weeks.</p>{% endfor %}
+</div>
+<p class="muted small">"Paid" logs the usual monthly amount dated today. Use "…" for a different amount or date.</p>
 
 <h2 class="h5">Order of attack</h2>
 <p class="muted">Extra money goes to the top until it reaches zero. Reorder on the Debts page. "With the plan" assumes £250 a month extra from four months out — change it on Projection.</p>
