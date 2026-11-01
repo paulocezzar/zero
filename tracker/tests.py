@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from . import spending
-from .models import BudgetLine, Debt, MonthCheckin, Outgoing, Payment
+from .models import BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, Snapshot
 
 
 class LedgerTests(TestCase):
@@ -197,3 +197,49 @@ class SpendingTests(TestCase):
         self.client.force_login(other)
         self.assertNotContains(self.client.get(reverse("spending")), "Mine")
         self.assertEqual(self.client.post(reverse("outgoing_delete", args=[o.pk])).status_code, 404)
+
+
+class MomentumTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("p", password="x" * 12)
+        self.a = Debt.objects.create(owner=self.user, name="A", kind="collector", balance=Decimal("300"), monthly=Decimal("30"), pay_day=date.today().day, priority=0)
+        self.b = Debt.objects.create(owner=self.user, name="B", kind="collector", balance=Decimal("500"), monthly=Decimal("25"), pay_day=date.today().day, priority=1)
+        BudgetLine.objects.create(owner=self.user, item="Rent", group="home", amount=Decimal("-1400"), pay_day=1)
+        self.client.force_login(self.user)
+
+    def test_due_grouped_and_paid_all(self):
+        r = self.client.get(reverse("overview"))
+        self.assertEqual(len(r.context["groups"]), 1)
+        self.assertEqual(r.context["groups"][0]["total"], Decimal("55"))
+        self.assertContains(r, "Paid all 2")
+        r = self.client.post(reverse("quick_pay_all"), {"ids": [self.a.pk, self.b.pk]})
+        self.assertRedirects(r, reverse("overview"))
+        self.a.refresh_from_db(); self.b.refresh_from_db()
+        self.assertEqual((self.a.balance, self.b.balance), (Decimal("270"), Decimal("475")))
+        self.assertEqual(Payment.objects.count(), 2)
+        self.client.post(reverse("quick_pay_all"), {"ids": [self.a.pk, self.b.pk]})
+        self.assertEqual(Payment.objects.count(), 2)  # once a month only
+        r = self.client.get(reverse("overview"))
+        self.assertEqual(r.context["streak"], 1)
+        self.assertEqual(r.context["next_win"]["debt"], self.a)
+
+    def test_snapshot_recorded_once_per_day(self):
+        self.client.post(reverse("quick_pay", args=[self.a.pk]))
+        self.client.post(reverse("payments"), {"date": date.today(), "debt": self.b.pk, "amount": "100", "note": ""})
+        snaps = Snapshot.objects.filter(owner=self.user)
+        self.assertEqual(snaps.count(), 1)
+        self.assertEqual(snaps.first().total, Decimal("670"))
+        self.assertIsNotNone(snaps.first().clear_month)
+
+    def test_calendar_feed_without_login(self):
+        self.client.get(reverse("profile"))
+        tok = CalendarToken.objects.get(owner=self.user).token
+        self.client.logout()
+        r = self.client.get(reverse("calendar_feed", args=[tok]))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/calendar; charset=utf-8")
+        body = r.content.decode()
+        self.assertIn("SUMMARY:£30.00 A", body)
+        self.assertIn("SUMMARY:£1400.00 Rent", body)
+        self.assertIn("TRIGGER:-P1D", body)
+        self.assertEqual(self.client.get(reverse("calendar_feed", args=["nope"])).status_code, 404)

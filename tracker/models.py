@@ -1,6 +1,8 @@
 from decimal import Decimal
 
 from django.conf import settings
+import secrets
+
 from django.db import models
 
 
@@ -138,3 +140,29 @@ class Outgoing(models.Model):
 
     def __str__(self):
         return f"{self.date} {self.merchant or self.note} £{self.amount}"
+
+
+class Snapshot(models.Model):
+    """Where things stood on a day: total owed and the projected debt-free month. One per day per user."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="snapshots")
+    day = models.DateField()
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    clear_month = models.DateField(null=True, blank=True)
+    progress = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["day"]
+        constraints = [models.UniqueConstraint(fields=["owner", "day"], name="one_snapshot_per_day")]
+
+
+def _token():
+    return secrets.token_urlsafe(24)
+
+
+class CalendarToken(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="calendar_token")
+    token = models.CharField(max_length=48, unique=True, default=_token)
+
+    def reset(self):
+        self.token = _token()
+        self.save(update_fields=["token"])

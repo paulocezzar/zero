@@ -19,7 +19,11 @@
 </div>
 <p class="muted mt-2">Right-hand date is the clear month with the plan.</p>
 </div></div>
-{{ chart|json_script:"chart-data" }}
+<h2 class="mt-4">Your debt-free date over time</h2>
+{% if history_n > 1 %}<p class="lede">Each payment and check-in records the projected clear month. The line should walk down and to the right.</p>
+<canvas id="history" height="120" aria-label="Months until debt-free, over time"></canvas>
+{% else %}<p class="muted">Starts drawing once a couple of payments or check-ins are logged — every one records where the date stands, so you can watch it come forward.</p>{% endif %}
+{{ chart|json_script:"chart-data" }}{{ history|json_script:"history-data" }}
 {% endblock %}
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -32,5 +36,9 @@
     { label: 'With the plan', data: d.plan, borderColor: col('--accent'), borderWidth: 2.5, pointRadius: 0, tension: 0 } ] },
     options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { boxWidth: 14, boxHeight: 3 } } },
       scales: { y: { grid: { color: col('--rail') }, ticks: { callback: (v) => '£' + (v / 1000) + 'k' } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 6, maxRotation: 0 } } } } });
+  const h = JSON.parse(document.getElementById('history-data').textContent), hc = document.getElementById('history');
+  if (hc && h.labels.length > 1) new Chart(hc, { type: 'line', data: { labels: h.labels, datasets: [ { label: 'Months until debt-free', data: h.months, borderColor: col('--accent'), borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: col('--accent'), tension: 0, stepped: true } ] },
+    options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => h.months[c.dataIndex] + ' months → clear ' + h.clear[c.dataIndex] + ' · owing £' + h.total[c.dataIndex].toLocaleString('en-GB', { maximumFractionDigits: 0 }) } } },
+      scales: { y: { grid: { color: col('--rail') }, ticks: { callback: (v) => v + ' mo' } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 6, maxRotation: 0 } } } } });
 </script>
 {% endblock %}

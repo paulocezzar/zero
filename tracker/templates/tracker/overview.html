@@ -4,29 +4,44 @@
   <div class="big">{{ total|gbp }}<small>to zero</small></div>
   <div class="sub">{{ debts|length }} open debts · {{ t.debt_pay|gbp }} a month in payments{% if interest_total %} · <span class="bad">{{ interest_total|gbp }} charging interest</span>{% endif %}</div>
   <div class="rail"><i style="width: {{ progress }}%"></i></div>
-  <div class="muted" style="margin-top:.3rem">{{ progress }}% of what you started with is paid</div>
-  <div class="facts">
-    <div class="fact"><div class="v {% if t.left < 0 %}bad{% else %}good{% endif %}">{{ t.left|gbp }}</div><div class="k">left over each month</div></div>
-    <div class="fact"><div class="v">{% if plan_total_clear %}{{ plan_total_clear|date:"M Y" }}{% else %}—{% endif %}</div><div class="k">clear, with the plan</div></div>
-    <div class="fact"><div class="v {% if interest_monthly %}bad{% endif %}">{% if interest_monthly %}{{ interest_monthly|gbp }}{% else %}£0{% endif %}</div><div class="k">interest a month</div></div>
+  <div class="muted" style="margin-top:.3rem">{{ progress }}% of what you started with is paid{% if streak %} · <span class="good">{{ streak }} month{{ streak|pluralize }} in a row paid in full</span>{% endif %}</div>
+
+  {% if plan_total_clear %}
+  <div class="countdown" data-clear="{{ clear_iso }}">
+    <div class="cd-main"><span class="cd-days num" id="cd-days">—</span><span class="cd-unit">days</span><span class="cd-clock num" id="cd-clock"></span></div>
+    <div class="cd-sub">until you're debt-free with the plan — <strong>{{ plan_total_clear|date:"F Y" }}</strong>{% if asis_total_clear and asis_total_clear != plan_total_clear %}<span class="muted">, instead of {{ asis_total_clear|date:"F Y" }} as things are</span>{% endif %}</div>
   </div>
+  {% endif %}
+
+  <div class="facts">
+    <div class="fact"><div class="v {% if everyday_budget and spent > everyday_budget %}bad{% endif %}">{{ spent|gbp }}</div><div class="k">{% if everyday_budget %}of {{ everyday_budget|gbp }} everyday, {{ days_left }} day{{ days_left|pluralize }} left{% else %}spent this month{% endif %}</div></div>
+    {% if groups %}<div class="fact"><div class="v">{{ groups.0.total|gbp }}</div><div class="k">due {% if groups.0.diff == 0 %}today{% elif groups.0.diff == 1 %}tomorrow{% else %}{{ groups.0.date|date:"D j M" }}{% endif %}</div></div>{% endif %}
+    {% if next_win %}<div class="fact"><div class="v">{% if next_win.months <= 0 %}this month{% else %}{{ next_win.months }} mo{% endif %}</div><div class="k">until {{ next_win.debt.name }} is gone</div></div>{% endif %}
+  </div>
+  {% if no_apr %}<p class="small warn mt-2 mb-0">{% for d in no_apr %}<a href="{% url 'debt_edit' d.pk %}">{{ d.name }}</a> has no APR set, so its interest isn't counted yet.{% endfor %}</p>{% endif %}
 </section>
 
 <div class="cols">
 <div class="col-main">
 <h2>Due in the next two weeks</h2>
-<div class="list">
-{% for diff, d in due %}
+{% for g in groups %}
+<div class="due-day">
+  <div class="due-head"><span class="n1">{% if g.diff == 0 %}Today{% elif g.diff == 1 %}Tomorrow{% else %}{{ g.date|date:"l j F" }}{% endif %}</span><span class="num muted">{{ g.total|gbp:2 }}</span>
+    {% if g.debts|length > 1 %}<form method="post" action="{% url 'quick_pay_all' %}" class="ms-auto">{% csrf_token %}{% for d in g.debts %}<input type="hidden" name="ids" value="{{ d.pk }}">{% endfor %}<button class="btn btn-sm btn-accent">Paid all {{ g.debts|length }}</button></form>{% endif %}
+  </div>
+  <div class="list">
+  {% for d in g.debts %}
   <div class="row-item">
-    <div class="when">{% if diff == 0 %}Today{% else %}{{ diff }} day{{ diff|pluralize }}{% endif %}</div>
     <div class="who"><div class="n1">{{ d.name }}</div><div class="n2 num">{{ d.monthly|gbp:2 }}</div></div>
     <div class="acts">
       <form method="post" action="{% url 'quick_pay' d.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet">Paid</button></form>
       <a class="btn btn-sm btn-quiet btn-icon" href="{% url 'payments' %}?debt={{ d.pk }}" aria-label="Log a different amount for {{ d.name }}">…</a>
     </div>
   </div>
-{% empty %}<p class="muted py-3">Nothing due in the next two weeks.</p>{% endfor %}
+  {% endfor %}
+  </div>
 </div>
+{% empty %}<p class="muted py-3">Nothing due in the next two weeks.</p>{% endfor %}
 {% if done %}<p class="muted mt-2">Paid this month: {% for d in done %}<span class="tag">✓ {{ d.name }}</span> {% endfor %}</p>{% endif %}
 <p class="muted">"Paid" logs the usual amount dated today. "…" for a different amount or date.</p>
 
@@ -37,9 +52,6 @@
 <p class="muted">Direct debits; nothing to log. Edit them on <a href="{% url 'budget' %}">Budget</a>. <button type="button" class="btn btn-sm btn-quiet ms-2" id="bills-more" hidden>Show the fortnight</button></p>
 <script>(() => { const later = document.querySelectorAll('#bills .later'); const b = document.getElementById('bills-more'); if (!later.length || !b) return; b.hidden = false; let open = false; b.addEventListener('click', () => { open = !open; later.forEach((r) => r.hidden = !open); b.textContent = open ? 'Just this week' : 'Show the fortnight'; }); })();</script>{% endif %}
 
-<h2 class="d-flex justify-content-between"><span>Spent this month</span><a class="small fw-normal" href="{% url 'spending' %}">Spending</a></h2>
-<p>{% if spent %}<strong class="num {% if everyday_budget and spent > everyday_budget %}bad{% endif %}">{{ spent|gbp }}</strong>{% if everyday_budget %} of {{ everyday_budget|gbp }} everyday budget{% endif %} · {{ days_left }} day{{ days_left|pluralize }} to go{% else %}Nothing logged yet. <a href="{% url 'spending' %}">Log a spend</a> or import a statement.{% endif %}</p>
-{% if spent and everyday_budget %}<div class="rail {% if spent > everyday_budget %}bad{% endif %} mb-3"><i style="width:{% widthratio spent everyday_budget 100 %}%"></i></div>{% endif %}
 {% if last %}<h2>Last check-in · {{ last }}</h2>
 <p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
 </div>
@@ -51,13 +63,40 @@
   <div class="debt">
     <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ forloop.counter }}. {{ d.name }}{% if d.apr %} <span class="tag int">interest</span>{% endif %}</a><div class="bal">{{ d.balance|gbp }}</div></div>
     <div class="rail {% if d.apr %}bad{% endif %}"><i style="width: {{ d.progress }}%"></i></div>
-    <div class="foot"><div class="pct">{{ d.progress }}% paid · {{ d.monthly|gbp }}/mo{% with m=d.months_left %}{% if m %} · {{ m }} mo as is{% endif %}{% endwith %}</div><div class="pct">{% with c=plan_clear|get_item:d.pk %}{% if c %}clear {{ c|date:"M Y" }}{% else %}15+ yrs{% endif %}{% endwith %}</div></div>
+    <div class="foot"><div class="pct">{{ d.progress }}% paid · {{ d.monthly|gbp }}/mo</div>
+      <div class="pct">{% with c=plan_clear|get_item:d.pk a=asis_clear|get_item:d.pk %}{% if a and c and a != c %}<s class="muted">{{ a|date:"M Y" }}</s> → <strong>{{ c|date:"M Y" }}</strong>{% elif c %}clear {{ c|date:"M Y" }}{% elif a %}clear {{ a|date:"M Y" }}{% else %}15+ yrs as is{% endif %}{% endwith %}</div></div>
   </div>
 {% endif %}{% endfor %}
 </div>
+
+<h2 style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem"><span>Spent this month</span><a class="small fw-normal" href="{% url 'spending' %}">Spending</a></h2>
+{% if rails %}<div class="list">{% for r in rails %}
+<div class="cat {% if r.over %}over{% endif %} {% if r.nobudget %}nobudget{% endif %}">
+  <div class="top"><span class="n1">{{ r.label }}</span><span class="amt">{{ r.spent|gbp }}{% if not r.nobudget %} <span class="of">of {{ r.budget|gbp }}</span>{% endif %}</span></div>
+  <div class="rail"><i style="width:{{ r.pct }}%"></i></div>
+</div>{% endfor %}</div>
+{% else %}<p class="muted">Nothing logged yet. <a href="{% url 'spending' %}">Log a spend</a> or import a statement.</p>{% endif %}
 
 <h2>Recent payments</h2>
 <div class="list">{% for p in recent %}<div class="row-item"><div class="when">{{ p.date|date:"j M" }}</div><div class="who"><div class="n1">{{ p.debt.name }}</div>{% if p.note and p.note != 'quick' %}<div class="n2">{{ p.note }}</div>{% endif %}</div><div class="amt">{{ p.amount|gbp:2 }}</div></div>{% empty %}<p class="muted py-3">None yet.</p>{% endfor %}</div>
 </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>(() => {
+  const el = document.querySelector('.countdown'); if (!el) return;
+  const target = new Date(el.dataset.clear + 'T00:00:00');
+  const days = document.getElementById('cd-days'), clock = document.getElementById('cd-clock');
+  const pad = (n) => String(n).padStart(2, '0');
+  const tick = () => {
+    let ms = target - new Date(); if (ms < 0) ms = 0;
+    const d = Math.floor(ms / 86400000); ms -= d * 86400000;
+    const h = Math.floor(ms / 3600000); ms -= h * 3600000;
+    const m = Math.floor(ms / 60000); const s = Math.floor((ms - m * 60000) / 1000);
+    days.textContent = d.toLocaleString('en-GB');
+    clock.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+  };
+  tick();
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) setInterval(tick, 1000);
+})();</script>
 {% endblock %}

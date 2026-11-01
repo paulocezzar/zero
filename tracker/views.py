@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -7,13 +7,13 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_not_required
 from django.db import transaction
 from django.db.models import Sum
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from . import projection, spending
 from .forms import BudgetLineForm, DebtForm, ImportForm, MonthForm, OutgoingForm, PaymentForm, ProjectionForm, SignupForm
-from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, Debt, MonthCheckin, Outgoing, Payment
+from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Debt, MonthCheckin, Outgoing, Payment, Snapshot
 
 ZERO = Decimal("0")
 
@@ -71,6 +71,58 @@ def category_rails(user, first):
     return rails
 
 
+PLAN_EXTRA = Decimal("250")
+PLAN_FROM_MONTHS = 4
+
+
+def plan_for(debts, start=None):
+    start = start or _first_of_month()
+    return projection.simulate(debts, start=start, extra=PLAN_EXTRA, extra_from=projection.add_months(start, PLAN_FROM_MONTHS))
+
+
+def record_snapshot(user):
+    """Called whenever balances change: keeps a per-day history of total owed and the projected clear month."""
+    debts = list(open_debts(user))
+    total = sum((d.balance for d in debts), ZERO)
+    start_total = sum(((d.starting_balance or d.balance) for d in debts), ZERO)
+    progress = int(100 - total / start_total * 100) if start_total > 0 else 0
+    plan = plan_for(debts)
+    Snapshot.objects.update_or_create(owner=user, day=date.today(), defaults={"total": total, "clear_month": plan.last_month if plan.all_clear else None, "progress": max(0, min(100, progress))})
+
+
+def _log_quick(d):
+    """Log a debt's usual monthly payment dated today. Returns False if already logged this month."""
+    if Payment.objects.filter(debt=d, date__gte=_first_of_month()).exists() or d.monthly <= 0:
+        return False
+    with transaction.atomic():
+        Payment.objects.create(debt=d, date=date.today(), amount=d.monthly, note="quick")
+        Debt.objects.filter(pk=d.pk).update(balance=max(ZERO, d.balance - d.monthly))
+    return True
+
+
+def paid_streak(user, debts):
+    """Months in a row (counting back from last month, plus this month if complete) where every open debt got a payment."""
+    active = [d for d in debts if d.monthly > 0 and d.balance > 0]
+    if not active:
+        return 0
+    first_payment = Payment.objects.filter(debt__owner=user).order_by("date").values_list("date", flat=True).first()
+    if not first_payment:
+        return 0
+    streak, m = 0, _first_of_month()
+    this_month_done = all(Payment.objects.filter(debt=d, date__gte=m).exists() for d in active)
+    if this_month_done:
+        streak += 1
+    m = projection.add_months(m, -1)
+    while m >= first_payment.replace(day=1):
+        nxt = projection.add_months(m, 1)
+        if all(Payment.objects.filter(debt=d, date__gte=m, date__lt=nxt).exists() for d in active):
+            streak += 1
+            m = projection.add_months(m, -1)
+        else:
+            break
+    return streak
+
+
 # ---------- overview ----------
 
 def overview(request):
@@ -100,21 +152,45 @@ def overview(request):
             bills.append((diff, b))
     bills.sort(key=lambda x: x[0])
     interest_debts = [d for d in debts if d.apr > 0 and d.balance > 0]
-    plan = projection.simulate(debts, start=_first_of_month(), extra=Decimal("250"), extra_from=projection.add_months(_first_of_month(), 4))
+    first = _first_of_month()
+    plan = plan_for(debts)
+    asis = projection.simulate(debts, start=first, planned=False)
     plan_clear = {s.debt_id: s.clear for s in plan.debts}
+    asis_clear = {s.debt_id: s.clear for s in asis.debts}
     last = MonthCheckin.objects.filter(owner=request.user).first()
     start_total = sum(((d.starting_balance or d.balance) for d in debts), ZERO)
     total = sum((d.balance for d in debts), ZERO)
     progress = int(100 - total / start_total * 100) if start_total > 0 else 0
+    # group what's due by day so one tap can log the lot
+    groups = []
+    for diff, d in due:
+        if groups and groups[-1]["diff"] == diff:
+            groups[-1]["debts"].append(d)
+        else:
+            groups.append({"diff": diff, "date": today + timedelta(days=diff), "debts": [d]})
+    for g in groups:
+        g["total"] = sum((d.monthly for d in g["debts"]), ZERO)
+    # next win: the first debt to disappear with the plan
+    upcoming = sorted(((c, d) for d in debts if d.balance > 0 and (c := plan_clear.get(d.id))), key=lambda x: x[0])
+    next_win = None
+    if upcoming:
+        c, d = upcoming[0]
+        next_win = {"debt": d, "month": c, "months": (c.year - first.year) * 12 + c.month - first.month}
+    rails = [r for r in category_rails(request.user, first) if not r["fixed"]]
+    spent = sum((r["spent"] for r in rails), ZERO)
+    clear = plan.last_month if plan.all_clear else None
     ctx = {
         "progress": max(0, min(100, progress)),
-        "plan_total_clear": plan.last_month if plan.all_clear else None,
-        "total": sum((d.balance for d in debts), ZERO),
+        "plan_total_clear": clear, "clear_iso": clear.isoformat() if clear else "",
+        "asis_total_clear": asis.last_month if asis.all_clear else None,
+        "total": total,
         "interest_total": sum((d.balance for d in interest_debts), ZERO),
         "interest_monthly": sum((d.monthly_interest for d in interest_debts), ZERO),
-        "t": t, "due": due, "done": done, "bills": bills, "debts": debts, "plan_clear": plan_clear, "last": last,
-        "spent": sum((r["spent"] for r in category_rails(request.user, _first_of_month()) if not r["fixed"]), ZERO), "everyday_budget": -t["everyday"], "days_left": (projection.add_months(_first_of_month(), 1) - today).days,
-        "recent": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:8],
+        "no_apr": [d for d in debts if d.kind == "card" and d.apr == 0 and d.balance > 0],
+        "t": t, "due": due, "groups": groups, "done": done, "bills": bills, "debts": debts, "plan_clear": plan_clear, "asis_clear": asis_clear, "last": last,
+        "next_win": next_win, "streak": paid_streak(request.user, debts),
+        "spent": spent, "everyday_budget": -t["everyday"], "days_left": (projection.add_months(first, 1) - today).days, "rails": rails[:5],
+        "recent": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:6],
     }
     return render(request, "tracker/overview.html", ctx)
 
@@ -132,6 +208,7 @@ def debt_edit(request, pk=None):
         obj = form.save(commit=False)
         obj.owner = request.user
         obj.save()
+        record_snapshot(request.user)
         messages.success(request, "Debt saved.")
         return redirect("debts")
     return render(request, "tracker/form.html", {"form": form, "title": debt.name if debt else "Add a debt", "back": "debts", "delete": debt})
@@ -173,6 +250,7 @@ def payment_list(request):
         with transaction.atomic():
             p = form.save()
             Debt.objects.filter(pk=p.debt_id).update(balance=max(ZERO, p.debt.balance - p.amount))
+        record_snapshot(request.user)
         messages.success(request, f"Logged £{p.amount} to {p.debt.name}.")
         return redirect("payments")
     return render(request, "tracker/payments.html", {"form": form, "payments": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:300]})
@@ -180,6 +258,12 @@ def payment_list(request):
 
 @require_POST
 def payment_undo(request, pk):
+    _r = _payment_undo(request, pk)
+    record_snapshot(request.user)
+    return _r
+
+
+def _payment_undo(request, pk):
     p = get_object_or_404(Payment, pk=pk, debt__owner=request.user)
     with transaction.atomic():
         Debt.objects.filter(pk=p.debt_id).update(balance=p.debt.balance + p.amount)
@@ -206,6 +290,7 @@ def month_list(request):
         if existing:
             m.pk = existing.pk
         m.save()
+        record_snapshot(request.user)
         messages.success(request, f"Saved {m}.")
         return redirect("month")
     return render(request, "tracker/month.html", {"form": form, "months": MonthCheckin.objects.filter(owner=request.user), "t": t})
@@ -260,7 +345,9 @@ def projection_view(request):
         "base": [float(v) for _, v in base.series[:horizon]],
         "plan": ([float(v) for _, v in plan.series] + [0.0] * horizon)[:horizon],
     }
-    return render(request, "tracker/projection.html", {"form": form, "rows": rows, "base": base, "plan": plan, "chart": chart})
+    snaps = list(Snapshot.objects.filter(owner=request.user, clear_month__isnull=False))
+    history = {"labels": [x.day.strftime("%-d %b %y") for x in snaps], "months": [((x.clear_month.year - x.day.year) * 12 + x.clear_month.month - x.day.month) for x in snaps], "clear": [x.clear_month.strftime("%b %Y") for x in snaps], "total": [float(x.total) for x in snaps]}
+    return render(request, "tracker/projection.html", {"form": form, "rows": rows, "base": base, "plan": plan, "chart": chart, "history": history, "history_n": len(snaps)})
 
 
 # ---------- PWA ----------
@@ -284,19 +371,56 @@ def manifest(request):
 def quick_pay(request, pk):
     """One tap from the overview: log this debt's monthly payment dated today."""
     d = get_object_or_404(Debt, pk=pk, owner=request.user, closed=False)
-    if Payment.objects.filter(debt=d, date__gte=_first_of_month()).exists():
-        messages.info(request, f"{d.name} is already logged this month. Use Pay for an extra payment.")
-        return redirect("overview")
-    if d.monthly > 0:
-        with transaction.atomic():
-            Payment.objects.create(debt=d, date=date.today(), amount=d.monthly, note="quick")
-            Debt.objects.filter(pk=d.pk).update(balance=max(ZERO, d.balance - d.monthly))
+    if _log_quick(d):
+        record_snapshot(request.user)
         messages.success(request, f"Logged £{d.monthly} to {d.name}.")
+    else:
+        messages.info(request, f"{d.name} is already logged this month. Use Pay for an extra payment.")
+    return redirect("overview")
+
+
+@require_POST
+def quick_pay_all(request):
+    """Log the usual payment for every debt listed (one day's worth of direct debits)."""
+    ids = [int(i) for i in request.POST.getlist("ids") if i.isdigit()]
+    logged = [d.name for d in Debt.objects.filter(pk__in=ids, owner=request.user, closed=False) if _log_quick(d)]
+    if logged:
+        record_snapshot(request.user)
+        messages.success(request, f"Logged {len(logged)}: {', '.join(logged)}.")
+    else:
+        messages.info(request, "Those are already logged this month.")
     return redirect("overview")
 
 
 def profile(request):
-    return render(request, "tracker/profile.html")
+    tok, _ = CalendarToken.objects.get_or_create(owner=request.user)
+    if request.method == "POST" and request.POST.get("action") == "reset_calendar":
+        tok.reset()
+        messages.success(request, "Calendar link reset. Re-subscribe on your phone.")
+        return redirect("profile")
+    host = request.get_host()
+    return render(request, "tracker/profile.html", {"cal_url": f"webcal://{host}/cal/{tok.token}.ics", "cal_https": request.build_absolute_uri(f"/cal/{tok.token}.ics")})
+
+
+@login_not_required
+def calendar_feed(request, token):
+    """Subscribable calendar: every debt payment and bill for the next 12 months, with a reminder the day before."""
+    tok = get_object_or_404(CalendarToken, token=token)
+    user = tok.owner
+    first = _first_of_month()
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Zero//Payments//EN", "CALSCALE:GREGORIAN", "X-WR-CALNAME:Zero — payments", "REFRESH-INTERVAL;VALUE=DURATION:P1D"]
+    items = [(f"debt-{d.pk}", d.pay_day, d.name, d.monthly, "Debt payment") for d in open_debts(user) if d.monthly > 0 and d.balance > 0]
+    items += [(f"bill-{b.pk}", b.pay_day, b.item, -b.amount, "Bill") for b in BudgetLine.objects.filter(owner=user, amount__lt=0, pay_day__isnull=False)]
+    for i in range(12):
+        m = projection.add_months(first, i)
+        for key, day, name, amount, kind in items:
+            d = m.replace(day=min(day, 28))
+            if d < date.today():
+                continue
+            lines += ["BEGIN:VEVENT", f"UID:{key}-{d:%Y%m}@zero", f"DTSTAMP:{date.today():%Y%m%d}T000000Z", f"DTSTART;VALUE=DATE:{d:%Y%m%d}", f"DTEND;VALUE=DATE:{d + timedelta(days=1):%Y%m%d}",
+                      f"SUMMARY:£{amount:.2f} {name}".replace(",", "\,"), f"DESCRIPTION:{kind} · logged in Zero", "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:Tomorrow: £{amount:.2f} {name}", "TRIGGER:-P1D", "END:VALARM", "END:VEVENT"]
+    lines.append("END:VCALENDAR")
+    return HttpResponse("\r\n".join(lines) + "\r\n", content_type="text/calendar; charset=utf-8")
 
 
 @login_not_required

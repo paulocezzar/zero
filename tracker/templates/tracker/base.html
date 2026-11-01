@@ -128,6 +128,20 @@
   .alert { border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
   .alert-success { border-color: var(--good); } .alert-info { border-color: var(--accent); } .alert-danger { border-color: var(--bad); }
   a { color: var(--accent); }
+  /* countdown + due groups */
+  .countdown { margin: 1.1rem 0 .4rem; padding: .9rem 1rem; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+  .cd-main { display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+  .cd-days { font-family: var(--display); font-size: clamp(2rem, 8vw, 2.6rem); line-height: 1; letter-spacing: -.02em; color: var(--accent); }
+  .cd-unit { color: var(--muted); }
+  .cd-clock { margin-left: auto; font-size: 1.05rem; color: var(--muted); letter-spacing: .04em; }
+  .cd-sub { color: var(--muted); font-size: .9rem; margin-top: .35rem; }
+  .cd-sub strong { color: var(--ink); font-weight: 500; }
+  .due-day { margin-bottom: .75rem; }
+  .due-head { display: flex; align-items: center; gap: .75rem; padding: .5rem 0 .25rem; border-bottom: 2px solid var(--ink); }
+  .due-head .n1 { font-weight: 500; }
+  .warn { color: var(--warn); }
+  .warn a { color: inherit; }
+  @media (min-width: 992px) { .wrap { max-width: 66rem; } }
   /* spending rails */
   .cat { padding: .7rem 0; border-bottom: 1px solid var(--line); }
   .cat .top { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
