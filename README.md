@@ -1,4 +1,4 @@
-# Repayment Ledger
+# Zero
 
 A small private Django app: debts, payments, monthly check-in, budget, and a month-by-month payoff projection. Installable on a phone as a web app.
 

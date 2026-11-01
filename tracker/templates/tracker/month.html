@@ -1,4 +1,4 @@
-{% extends "tracker/base.html" %}{% block title %}This month · Repayment Ledger{% endblock %}
+{% extends "tracker/base.html" %}{% block title %}This month · Zero{% endblock %}
 {% block content %}
 <h1 class="h4">Monthly check-in</h1>
 <p class="muted">Three numbers on the 5th of each month. Left over = take-home + extra − fixed lines (£{{ t.fixed|floatformat:0|slice:"1:" }}) − debt payments (£{{ t.debt_pay|floatformat:0 }}) − everyday actual.</p>

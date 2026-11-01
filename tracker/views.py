@@ -203,7 +203,7 @@ def projection_view(request):
 
 def manifest(request):
     return JsonResponse({
-        "name": "Repayment Ledger", "short_name": "Ledger", "start_url": "/", "display": "standalone",
+        "name": "Zero", "short_name": "Zero", "start_url": "/", "display": "standalone",
         "background_color": "#f7f6f2", "theme_color": "#1f6f6a",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}],
     })
