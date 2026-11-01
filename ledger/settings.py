@@ -84,6 +84,8 @@ WHITENOISE_MANIFEST_STRICT = False  # fall back to the plain name when a file is
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+ALLOW_SIGNUP = os.environ.get("ALLOW_SIGNUP", "") == "1"  # open registration; off by default
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "overview"
 LOGOUT_REDIRECT_URL = "login"

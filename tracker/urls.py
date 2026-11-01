@@ -13,6 +13,7 @@ urlpatterns = [
     path("debts/<int:pk>/move/<str:direction>/", views.debt_move, name="debt_move"),
     path("payments/", views.payment_list, name="payments"),
     path("me/", views.profile, name="profile"),
+    path("signup/", views.signup, name="signup"),
     path("pay/<int:pk>/", views.quick_pay, name="quick_pay"),
     path("payments/<int:pk>/undo/", views.payment_undo, name="payment_undo"),
     path("month/", views.month_list, name="month"),

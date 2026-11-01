@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
 
 from .models import BudgetLine, Debt, MonthCheckin, Payment
 
@@ -43,3 +44,8 @@ class MonthForm(Bootstrap, forms.ModelForm):
 class ProjectionForm(Bootstrap, forms.Form):
     extra = forms.DecimalField(label="Extra £ per month", initial=250, min_value=0)
     extra_from = forms.DateField(label="Extra starts from", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
+
+
+class SignupForm(Bootstrap, UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        fields = ("username",)

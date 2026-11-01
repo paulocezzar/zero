@@ -1,9 +1,11 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 
 
 class Debt(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="debts")
     KINDS = [
         ("card", "Credit card"),
         ("collector", "Collector"),
@@ -71,6 +73,7 @@ class Payment(models.Model):
 
 
 class BudgetLine(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="budget_lines")
     GROUPS = [
         ("income", "Income"), ("home", "Home"), ("family", "Family"), ("tech", "Phones & tech"),
         ("subs", "Subscriptions"), ("savings", "Savings"), ("everyday", "Everyday"), ("other", "Other"),
@@ -89,7 +92,8 @@ class BudgetLine(models.Model):
 
 
 class MonthCheckin(models.Model):
-    month = models.DateField(unique=True, help_text="First of the month")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="checkins")
+    month = models.DateField(help_text="First of the month")
     income = models.DecimalField(max_digits=9, decimal_places=2)
     extra_income = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     everyday = models.DecimalField("Everyday spend actual", max_digits=9, decimal_places=2, default=0)
@@ -100,6 +104,7 @@ class MonthCheckin(models.Model):
 
     class Meta:
         ordering = ["-month"]
+        constraints = [models.UniqueConstraint(fields=["owner", "month"], name="one_checkin_per_month")]
 
     def __str__(self):
         return self.month.strftime("%b %Y")

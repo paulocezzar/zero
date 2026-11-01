@@ -11,10 +11,12 @@ from .models import BudgetLine, Debt, Payment
 class LedgerTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("p", password="x" * 12)
-        self.d = Debt.objects.create(name="Aqua", kind="card", balance=Decimal("1000"), monthly=Decimal("100"), apr=Decimal("30"), pay_day=3, priority=0)
-        self.v = Debt.objects.create(name="Vanda", kind="family", balance=Decimal("500"), monthly=Decimal("50"), priority=1)
-        BudgetLine.objects.create(item="Pay", group="income", amount=Decimal("3000"))
-        BudgetLine.objects.create(item="Rent", group="home", amount=Decimal("-1400"))
+        self.other = get_user_model().objects.create_user("q", password="y" * 12)
+        Debt.objects.create(owner=self.other, name="Someone else's", balance=Decimal("999"), monthly=Decimal("9"))
+        self.d = Debt.objects.create(owner=self.user, name="Aqua", kind="card", balance=Decimal("1000"), monthly=Decimal("100"), apr=Decimal("30"), pay_day=3, priority=0)
+        self.v = Debt.objects.create(owner=self.user, name="Vanda", kind="family", balance=Decimal("500"), monthly=Decimal("50"), priority=1)
+        BudgetLine.objects.create(owner=self.user, item="Pay", group="income", amount=Decimal("3000"))
+        BudgetLine.objects.create(owner=self.user, item="Rent", group="home", amount=Decimal("-1400"))
 
     def test_login_required_everywhere(self):
         for name in ["overview", "debts", "payments", "month", "budget", "projection", "debt_new"]:
@@ -45,7 +47,7 @@ class LedgerTests(TestCase):
         self.client.force_login(self.user)
         self.client.post(reverse("month"), {"month": "2026-11-01", "income": "3000", "extra_income": "100", "everyday": "800", "note": ""})
         from .models import MonthCheckin
-        m = MonthCheckin.objects.get()
+        m = MonthCheckin.objects.get(owner=self.user)
         # 3000 + 100 - 1400 - (100 + 50) - 800
         self.assertEqual(m.left_over, Decimal("750"))
 
@@ -62,7 +64,24 @@ class LedgerTests(TestCase):
     def test_debt_move(self):
         self.client.force_login(self.user)
         self.client.post(reverse("debt_move", args=[self.v.pk, "up"]))
-        self.assertEqual(list(Debt.objects.values_list("name", flat=True)), ["Vanda", "Aqua"])
+        self.assertEqual(list(Debt.objects.filter(owner=self.user).values_list("name", flat=True)), ["Vanda", "Aqua"])
+
+    def test_users_cannot_see_each_other(self):
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("debts"))
+        self.assertNotContains(r, "Someone else")
+        other = Debt.objects.get(owner=self.other)
+        self.assertEqual(self.client.get(reverse("debt_edit", args=[other.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("quick_pay", args=[other.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("overview")).context["total"], Decimal("1500"))
+
+    def test_signup_gated(self):
+        self.assertEqual(self.client.get(reverse("signup")).status_code, 404)
+        with self.settings(ALLOW_SIGNUP=True):
+            self.assertEqual(self.client.get(reverse("signup")).status_code, 200)
+            r = self.client.post(reverse("signup"), {"username": "newperson", "password1": "a-long-password-1", "password2": "a-long-password-1"})
+            self.assertEqual(r.status_code, 302)
+            self.assertEqual(self.client.get(reverse("debts")).status_code, 200)
 
     def test_quick_pay_once_per_month(self):
         self.client.force_login(self.user)

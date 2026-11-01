@@ -30,11 +30,12 @@
 {% if done %}<p class="muted mt-2">Paid this month: {% for d in done %}<span class="tag">✓ {{ d.name }}</span> {% endfor %}</p>{% endif %}
 <p class="muted">"Paid" logs the usual amount dated today. "…" for a different amount or date.</p>
 
-{% if bills %}<h2>Bills in the same fortnight</h2>
-<div class="list">
-{% for diff, b in bills %}<div class="row-item"><div class="when">{% if diff == 0 %}Today{% else %}{{ diff }} day{{ diff|pluralize }}{% endif %}</div><div class="who"><div class="n1">{{ b.item }}</div>{% if b.note %}<div class="n2">{{ b.note }}</div>{% endif %}</div><div class="amt">{{ b.amount|gbp:2 }}</div></div>{% endfor %}
+{% if bills %}<h2>Bills this week</h2>
+<div class="list" id="bills">
+{% for diff, b in bills %}<div class="row-item {% if diff > 7 %}later{% endif %}" {% if diff > 7 %}hidden{% endif %}><div class="when">{% if diff == 0 %}Today{% else %}{{ diff }} day{{ diff|pluralize }}{% endif %}</div><div class="who"><div class="n1">{{ b.item }}</div>{% if b.note %}<div class="n2">{{ b.note }}</div>{% endif %}</div><div class="amt">{{ b.amount|gbp:2 }}</div></div>{% endfor %}
 </div>
-<p class="muted">These leave by direct debit on their own; nothing to log. Edit them on <a href="{% url 'budget' %}">Budget</a>.</p>{% endif %}
+<p class="muted">Direct debits; nothing to log. Edit them on <a href="{% url 'budget' %}">Budget</a>. <button type="button" class="btn btn-sm btn-quiet ms-2" id="bills-more" hidden>Show the fortnight</button></p>
+<script>(() => { const later = document.querySelectorAll('#bills .later'); const b = document.getElementById('bills-more'); if (!later.length || !b) return; b.hidden = false; let open = false; b.addEventListener('click', () => { open = !open; later.forEach((r) => r.hidden = !open); b.textContent = open ? 'Just this week' : 'Show the fortnight'; }); })();</script>{% endif %}
 
 {% if last %}<h2>Last check-in · {{ last }}</h2>
 <p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}

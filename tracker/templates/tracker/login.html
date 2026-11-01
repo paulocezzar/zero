@@ -12,5 +12,6 @@
   <input type="hidden" name="next" value="{{ next }}">
   <div class="col-12 mt-3"><button class="btn btn-accent w-100">Sign in</button></div>
 </form>
+{% if allow_signup %}<p class="muted mt-3">New here? <a href="{% url 'signup' %}">Create an account</a>.</p>{% endif %}
 </div>
 {% endblock %}
