@@ -1,0 +1,8 @@
+{% extends "tracker/base.html" %}{% block title %}Password changed · Zero{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 22rem; padding-top: 2rem;">
+<h1>Password changed</h1>
+<p>You can sign in with it now.</p>
+<a class="btn btn-accent w-100" href="{% url 'login' %}">Sign in</a>
+</div>
+{% endblock %}

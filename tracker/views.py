@@ -449,7 +449,64 @@ def profile(request):
         messages.success(request, "Calendar link reset. Re-subscribe on your phone.")
         return redirect("profile")
     host = request.get_host()
-    return render(request, "tracker/profile.html", {"cal_url": f"webcal://{host}/cal/{tok.token}.ics", "cal_https": request.build_absolute_uri(f"/cal/{tok.token}.ics")})
+    return render(request, "tracker/profile.html", {"cal_url": f"webcal://{host}/cal/{tok.token}.ics", "cal_https": request.build_absolute_uri(f"/cal/{tok.token}.ics"), "email_configured": settings.EMAIL_CONFIGURED})
+
+
+@require_POST
+def account_email(request):
+    email = (request.POST.get("email") or "").strip()
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+    try:
+        if email:
+            validate_email(email)
+    except ValidationError:
+        messages.error(request, "That doesn't look like an email address.")
+        return redirect("profile")
+    request.user.email = email
+    request.user.save(update_fields=["email"])
+    messages.success(request, "Email saved." if email else "Email removed.")
+    return redirect("profile")
+
+
+def account_export(request):
+    """Everything this account holds, as a zip of CSVs."""
+    import csv, io, zipfile
+    u = request.user
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        def sheet(name, header, rows):
+            f = io.StringIO(); w = csv.writer(f); w.writerow(header); w.writerows(rows); z.writestr(f"{name}.csv", f.getvalue())
+        sheet("debts", ["name", "kind", "balance", "starting_balance", "monthly", "apr", "promo_until", "pay_day", "priority", "note", "closed"],
+              [(d.name, d.kind, d.balance, d.starting_balance, d.monthly, d.apr, d.promo_until, d.pay_day, d.priority, d.note, d.closed) for d in Debt.objects.filter(owner=u)])
+        sheet("payments", ["date", "debt", "amount", "note"], [(p.date, p.debt.name, p.amount, p.note) for p in Payment.objects.filter(debt__owner=u).select_related("debt")])
+        sheet("budget", ["item", "group", "category", "amount", "pay_day", "note"], [(b.item, b.group, b.category, b.amount, b.pay_day, b.note) for b in BudgetLine.objects.filter(owner=u)])
+        sheet("checkins", ["month", "income", "extra_income", "everyday", "starling_on_3rd", "aqua_balance", "left_over", "note"],
+              [(m.month, m.income, m.extra_income, m.everyday, m.starling_on_3rd, m.aqua_balance, m.left_over, m.note) for m in MonthCheckin.objects.filter(owner=u)])
+        sheet("spending", ["date", "amount", "category", "merchant", "note", "source"], [(o.date, o.amount, o.category, o.merchant, o.note, o.source) for o in Outgoing.objects.filter(owner=u)])
+        sheet("offers", ["date", "debt", "amount", "status", "note"], [(o.date, o.debt.name, o.amount, o.status, o.note) for o in SettlementOffer.objects.filter(debt__owner=u).select_related("debt")])
+        sheet("snapshots", ["day", "total", "clear_month", "progress"], [(x.day, x.total, x.clear_month, x.progress) for x in Snapshot.objects.filter(owner=u)])
+    resp = HttpResponse(buf.getvalue(), content_type="application/zip")
+    resp["Content-Disposition"] = f'attachment; filename="zero-{u.username}-{date.today():%Y-%m-%d}.zip"'
+    return resp
+
+
+@require_POST
+def account_delete(request):
+    """Deletes the account and everything attached to it (all models cascade from the user)."""
+    if request.POST.get("confirm") != request.user.username:
+        messages.error(request, "Type your username exactly to confirm.")
+        return redirect("profile")
+    from django.contrib.auth import logout
+    u = request.user
+    logout(request)
+    u.delete()
+    return render(request, "tracker/deleted.html")
+
+
+@login_not_required
+def privacy(request):
+    return render(request, "tracker/privacy.html", {"email_configured": settings.EMAIL_CONFIGURED})
 
 
 @login_not_required

@@ -276,3 +276,37 @@ class PlanAndSettleTests(TestCase):
         self.assertTrue(self.col.closed); self.assertEqual(self.col.balance, Decimal("0"))
         self.assertEqual(Payment.objects.get(debt=self.col).amount, Decimal("400"))
         self.assertEqual(SettlementOffer.objects.count(), 1)
+
+
+class AccountTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("p", password="x" * 12, email="p@example.com")
+        Debt.objects.create(owner=self.user, name="A", balance=Decimal("10"), monthly=Decimal("1"))
+
+    def test_reset_flow_reachable_logged_out(self):
+        from django.core import mail
+        self.assertEqual(self.client.get(reverse("password_reset")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("privacy")).status_code, 200)
+        r = self.client.post(reverse("password_reset"), {"email": "p@example.com"})
+        self.assertRedirects(r, reverse("password_reset_done"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/reset/", mail.outbox[0].body)
+
+    def test_export_and_delete(self):
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("account_export"))
+        self.assertEqual(r["Content-Type"], "application/zip")
+        import io, zipfile
+        names = zipfile.ZipFile(io.BytesIO(r.content)).namelist()
+        self.assertIn("debts.csv", names)
+        r = self.client.post(reverse("account_delete"), {"confirm": "wrong"})
+        self.assertEqual(get_user_model().objects.filter(username="p").count(), 1)
+        r = self.client.post(reverse("account_delete"), {"confirm": "p"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(get_user_model().objects.filter(username="p").count(), 0)
+        self.assertEqual(Debt.objects.count(), 0)
+
+    def test_email_update(self):
+        self.client.force_login(self.user)
+        self.client.post(reverse("account_email"), {"email": "new@example.com"})
+        self.user.refresh_from_db(); self.assertEqual(self.user.email, "new@example.com")

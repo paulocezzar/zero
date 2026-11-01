@@ -58,8 +58,10 @@ class ProjectionForm(Bootstrap, forms.Form):
 
 
 class SignupForm(Bootstrap, UserCreationForm):
+    email = forms.EmailField(required=False, help_text="Optional — only used to reset your password")
+
     class Meta(UserCreationForm.Meta):
-        fields = ("username",)
+        fields = ("username", "email")
 
 
 class OutgoingForm(Bootstrap, forms.ModelForm):

@@ -1,0 +1,26 @@
+{% extends "tracker/base.html" %}{% block title %}Privacy · Zero{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 40rem;">
+<h1>Privacy</h1>
+<p class="lede">Zero is a tool for paying off what you owe. It holds what you type in, shows it back to you, and nothing else.</p>
+
+<h2>What's stored</h2>
+<p>Your username and password (hashed, never readable), an email if you choose to add one, and the figures you enter: debts, payments, budget lines, monthly check-ins, spending lines and any statement lines you import, settlement offers, and a daily snapshot of your totals so the charts can draw history.</p>
+
+<h2>What isn't</h2>
+<p>Zero doesn't connect to your bank. A statement you import is read once, turned into spending lines, and the file is not kept. There are no advertising trackers, no analytics scripts, and nothing is sold or shared. Your card numbers and account numbers are never asked for.</p>
+
+<h2>Who can see it</h2>
+<p>You, signed in. Each account only ever sees its own data. The person running this copy of Zero can access the database to keep it working, and that's the extent of it.</p>
+
+<h2>Where it lives</h2>
+<p>On a Render database in Frankfurt (EU), encrypted at rest, over HTTPS only. Sessions time out after 14 days idle.</p>
+
+<h2>Your controls</h2>
+<p>From <a href="{% url 'profile' %}">Profile</a> you can export everything as CSV files, change your password{% if email_configured %}, reset it by email{% endif %}, reset your calendar link, and delete the account — which removes every row attached to it, immediately.</p>
+
+<h2>Cookies</h2>
+<p>One session cookie to keep you signed in and one CSRF cookie to protect forms. Theme and privacy-blur choices are kept in your browser's own storage, not on the server.</p>
+<p class="muted small">Questions or a request about your data: contact whoever gave you access to this Zero.</p>
+</div>
+{% endblock %}

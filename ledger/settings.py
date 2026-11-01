@@ -107,3 +107,20 @@ if not DEBUG and "test" not in sys.argv:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     X_FRAME_OPTIONS = "DENY"
+
+
+# Email: set EMAIL_URL like smtp://user:pass@smtp.example.com:587?tls=1 (Resend, Brevo, Gmail app password...).
+# Without it, password-reset emails are printed to the server log instead of sent.
+_email = os.environ.get("EMAIL_URL", "")
+if _email.startswith("smtp://"):
+    from urllib.parse import parse_qs, urlparse
+    _u = urlparse(_email)
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST, EMAIL_PORT = _u.hostname, _u.port or 587
+    from urllib.parse import unquote
+    EMAIL_HOST_USER, EMAIL_HOST_PASSWORD = unquote(_u.username or ""), unquote(_u.password or "")
+    EMAIL_USE_TLS = parse_qs(_u.query).get("tls", ["1"])[0] == "1"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("EMAIL_FROM", "Zero <no-reply@zero.local>")
+EMAIL_CONFIGURED = _email.startswith("smtp://")

@@ -1,0 +1,6 @@
+Someone asked to reset the password for the Zero account "{{ user.get_username }}".
+
+Set a new one here (the link works once, for a few hours):
+{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+
+If that wasn't you, ignore this — nothing changes.

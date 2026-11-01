@@ -1,0 +1,12 @@
+{% extends "tracker/base.html" %}{% block title %}Reset password · Zero{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 22rem; padding-top: 2rem;">
+<h1>Forgot your password?</h1>
+<p class="lede">If there's an email on your account, we'll send a link to set a new one.</p>
+<form method="post" class="row g-2">{% csrf_token %}
+  <div class="col-12"><label class="form-label" for="id_email">Email</label><input class="form-control" type="email" name="email" id="id_email" autocomplete="email" autofocus required></div>
+  <div class="col-12 mt-3"><button class="btn btn-accent w-100">Send the link</button></div>
+</form>
+<p class="muted mt-3"><a href="{% url 'login' %}">Back to sign in</a></p>
+</div>
+{% endblock %}
