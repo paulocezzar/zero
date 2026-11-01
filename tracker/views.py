@@ -434,9 +434,9 @@ def offer_delete(request, pk):
 def manifest(request):
     from django.templatetags.static import static
     return JsonResponse({
-        "id": "/", "name": "Zero", "short_name": "Zero", "description": "Debts, payments and the month, in one place.",
+        "id": "/", "name": "Zero", "short_name": "Zero", "description": "Everything you owe, in the order it disappears.",
         "start_url": "/", "scope": "/", "display": "standalone", "orientation": "portrait",
-        "background_color": "#f7f6f2", "theme_color": "#1f6f6a",
+        "background_color": "#f3f4f0", "theme_color": "#1f6f6a",
         "icons": [
             {"src": static("tracker/icon-192.png"), "sizes": "192x192", "type": "image/png"},
             {"src": static("tracker/icon-512.png"), "sizes": "512x512", "type": "image/png"},
