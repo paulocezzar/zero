@@ -1,0 +1,22 @@
+{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Check the lines · Zero{% endblock %}
+{% block content %}
+<h1>Check the lines</h1>
+<p class="muted">{{ new_count }} new line{{ new_count|pluralize }} from {{ source|title }}{% if seen_count %}, {{ seen_count }} already imported{% endif %}. Fix any category that looks wrong, tick anything that isn't spending, then confirm.</p>
+<form method="post" action="{% url 'import' %}">{% csrf_token %}<input type="hidden" name="stage" value="confirm">
+<div class="table-responsive"><table class="table table-sm review">
+<thead><tr><th>Date</th><th>Where</th><th class="text-end">£</th><th>Category</th><th>Skip</th></tr></thead>
+<tbody>{% for r in rows %}
+<tr class="{% if r.seen %}seen{% endif %}">
+  <td class="num small text-nowrap">{{ r.date|slice:"5:" }}</td>
+  <td><div>{{ r.desc }}</div>{% if r.ref %}<div class="small muted">{{ r.ref }}</div>{% endif %}</td>
+  <td class="num text-end text-nowrap">{{ r.amount }}</td>
+  <td>{% if r.seen %}<span class="small muted">imported</span>{% else %}<select class="form-select" name="cat-{{ forloop.counter0 }}">{% for k,l in cats %}<option value="{{ k }}" {% if k == r.category %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>{% endif %}</td>
+  <td class="text-center">{% if not r.seen %}<input class="form-check-input" type="checkbox" name="skip-{{ forloop.counter0 }}" value="1" {% if r.skip %}checked{% endif %} aria-label="Skip"></td>{% endif %}
+</tr>{% endfor %}</tbody>
+</table></div>
+<div class="panel d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <span>About <strong class="num">{{ total|gbp }}</strong> of spending to add</span>
+  <span><a class="btn btn-quiet" href="{% url 'import' %}">Start over</a> <button class="btn btn-accent">Import these</button></span>
+</div>
+</form>
+{% endblock %}

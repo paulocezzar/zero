@@ -1,0 +1,17 @@
+{% extends "tracker/base.html" %}{% block title %}Import a statement · Zero{% endblock %}
+{% block content %}
+<h1>Import a statement</h1>
+<div class="cols"><div class="col-main">
+<form method="post" enctype="multipart/form-data" class="panel">{% csrf_token %}
+  <label class="form-label">CSV export</label>{{ form.statement }}
+  {% for e in form.statement.errors %}<div class="small bad mt-2">{{ e }}</div>{% endfor %}
+  <button class="btn btn-accent w-100 mt-3">Read the file</button>
+</form>
+<p class="muted mt-3">Nothing is saved until you confirm on the next screen. Lines already imported are recognised and skipped, so importing the same month twice is safe.</p>
+</div><div class="col-side">
+<h2>Getting the file</h2>
+<p><strong>Starling</strong> — in the app: Spaces & accounts → your account → Statements → Download CSV for the month.</p>
+<p><strong>Aqua</strong> — online account → Transactions → Export → CSV.</p>
+<p><strong>Anything else</strong> — any CSV with a date, a description and an amount column works. Money in, transfers and debt payments are left out automatically.</p>
+</div></div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "tracker/base.html" %}{% load ledger_extras %}{% block title %}Spending · Zero{% endblock %}
+{% block content %}
+<div class="monthnav">
+  <a href="?m={{ prev|date:'Y-m' }}" aria-label="Previous month">‹</a>
+  <h1>{{ first|date:"F Y" }}</h1>
+  <a class="{% if not next %}off{% endif %}" href="{% if next %}?m={{ next|date:'Y-m' }}{% endif %}" aria-label="Next month">›</a>
+</div>
+<div class="hero">
+  <div class="big num {% if left < 0 %}bad{% endif %}">{{ total|gbp }}</div>
+  <div class="muted">everyday spending{% if budget %} of {{ budget|gbp }} budgeted{% endif %}{% if is_current and days_left %} · {{ days_left }} day{{ days_left|pluralize }} left{% endif %}</div>
+  {% if budget %}<div class="rail {% if left < 0 %}bad{% endif %}"><i style="width:{% widthratio total budget 100 %}%"></i></div>
+  <div class="facts mt-3">
+    <div class="fact"><div class="v {% if left < 0 %}bad{% else %}good{% endif %}">{{ left|gbp }}</div><div class="k">{% if left < 0 %}over{% else %}left{% endif %}</div></div>
+    {% if is_current and days_left and left > 0 %}<div class="fact"><div class="v">{% widthratio left days_left 1 as perday %}£{{ perday }}</div><div class="k">a day to stay on track</div></div>{% endif %}
+    <div class="fact"><div class="v">{{ items|length }}</div><div class="k">line{{ items|length|pluralize }}</div></div>
+  </div>{% endif %}
+</div>
+
+<div class="cols"><div class="col-main">
+<h2>Log something</h2>
+<form method="post" class="panel row g-2 mb-3">{% csrf_token %}<input type="hidden" name="m" value="{{ first|date:'Y-m' }}">
+  <div class="col-6"><label class="form-label">Amount £</label>{{ form.amount }}</div>
+  <div class="col-6"><label class="form-label">Date</label>{{ form.date }}</div>
+  <div class="col-6"><label class="form-label">Category</label>{{ form.category }}</div>
+  <div class="col-6"><label class="form-label">Where</label>{{ form.merchant }}</div>
+  <div class="col-12"><label class="form-label">Note</label>{{ form.note }}</div>
+  {% if form.errors %}<div class="col-12 small bad">{{ form.errors }}</div>{% endif %}
+  <div class="col-12"><button class="btn btn-accent w-100">Log it</button></div>
+</form>
+<p class="muted">Or <a href="{% url 'import' %}">import a Starling or Aqua statement</a> and let Zero sort the lines. Budgets per category come from <a href="{% url 'budget' %}">Budget</a>.</p>
+
+<h2>By category</h2>
+{% if rails %}<div class="list">{% for r in rails %}
+<div class="cat {% if r.over %}over{% endif %} {% if r.nobudget %}nobudget{% endif %}">
+  <div class="top"><span class="n1">{{ r.label }}</span><span class="amt">{{ r.spent|gbp }}{% if not r.nobudget %} <span class="of">of {{ r.budget|gbp }}</span>{% endif %}</span></div>
+  <div class="rail"><i style="width:{{ r.pct }}%"></i></div>
+  <div class="small muted mt-1">{% if r.nobudget %}no budget line for this{% elif r.over %}{{ r.left|gbp }} over{% else %}{{ r.left|gbp }} left{% endif %}</div>
+</div>{% endfor %}</div>
+{% else %}<p class="muted">Nothing logged this month yet. Add a line above or import a statement.</p>{% endif %}
+{% if fixed %}<h2 class="mt-4">Bills &amp; fixed</h2>
+<p class="muted small">These leave by direct debit, so they sit outside the everyday number above. Imported statement lines land here when they match.</p>
+<div class="list">{% for r in fixed %}
+<div class="cat {% if r.over %}over{% endif %}">
+  <div class="top"><span class="n1">{{ r.label }}</span><span class="amt">{{ r.spent|gbp }} <span class="of">of {{ r.budget|gbp }}</span></span></div>
+  <div class="rail"><i style="width:{{ r.pct }}%"></i></div>
+</div>{% endfor %}</div>{% endif %}
+</div><div class="col-side">
+<h2>Lines</h2>
+{% if items %}<div class="list">{% for o in items %}
+<div class="row-item"><div class="who"><div class="n1">{{ o.merchant|default:o.get_category_display }}</div><div class="n2">{{ o.date|date:"j M" }} · {{ o.get_category_display }}{% if o.note %} · {{ o.note }}{% endif %}{% if o.source != 'manual' %} · {{ o.get_source_display|lower }}{% endif %}</div></div><div class="amt">{{ o.amount|gbp:2 }}</div><div class="acts"><form method="post" action="{% url 'outgoing_delete' o.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" aria-label="Remove">×</button></form></div></div>
+{% endfor %}</div>{% else %}<p class="muted">No lines for {{ first|date:"F" }}.</p>{% endif %}
+</div></div>
+{% endblock %}

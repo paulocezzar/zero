@@ -86,112 +86,131 @@
       "item": "Take-home pay (The Newt)",
       "group": "income",
       "amount": "3304.64",
-      "pay_day": 30
+      "pay_day": 30,
+      "category": "other"
     },
     {
       "item": "Rent",
       "group": "home",
       "amount": "-1400",
-      "pay_day": 1
+      "pay_day": 1,
+      "category": "home"
     },
     {
       "item": "Sky TV",
       "group": "home",
       "amount": "-21",
-      "pay_day": 28
+      "pay_day": 28,
+      "category": "home"
     },
     {
       "item": "Sky broadband",
       "group": "home",
       "amount": "-20",
-      "pay_day": 11
+      "pay_day": 11,
+      "category": "home"
     },
     {
       "item": "TV licence",
       "group": "home",
       "amount": "-16.36",
-      "pay_day": 6
+      "pay_day": 6,
+      "category": "home"
     },
     {
       "item": "Vanda — insurance element",
       "group": "family",
       "amount": "-104.09",
-      "pay_day": 1
+      "pay_day": 1,
+      "category": "family"
     },
     {
       "item": "Parents (Wise from Starling)",
       "group": "family",
       "amount": "-150",
-      "pay_day": 1
+      "pay_day": 1,
+      "category": "family"
     },
     {
       "item": "O2 ×2",
       "group": "tech",
       "amount": "-136.95",
       "note": "Check contract end dates",
-      "pay_day": 7
+      "pay_day": 7,
+      "category": "tech"
     },
     {
       "item": "Sky — MacBook Pro agreement",
       "group": "tech",
       "amount": "-59",
-      "pay_day": 13
+      "pay_day": 13,
+      "category": "tech"
     },
     {
       "item": "Sky — MacBook Air agreement",
       "group": "tech",
       "amount": "-24.11",
-      "pay_day": 14
+      "pay_day": 14,
+      "category": "tech"
     },
     {
       "item": "Netflix direct (cancel once linked to Sky)",
       "group": "subs",
       "amount": "-12.99",
-      "pay_day": 3
+      "pay_day": 3,
+      "category": "subs"
     },
     {
       "item": "Google Play, PlayStation, Apple",
       "group": "subs",
       "amount": "-47.47",
-      "pay_day": 10
+      "pay_day": 10,
+      "category": "subs"
     },
     {
       "item": "Software (Claude, ChatGPT, Google One, Proton)",
       "group": "subs",
       "amount": "-140.67",
-      "pay_day": 14
+      "pay_day": 14,
+      "category": "subs"
     },
     {
       "item": "Savings (Emergency £50 + kids £20)",
       "group": "savings",
       "amount": "-70",
-      "pay_day": 1
+      "pay_day": 1,
+      "category": "savings"
     },
     {
       "item": "Unite the Union",
       "group": "other",
       "amount": "-18.59",
-      "pay_day": 7
+      "pay_day": 7,
+      "category": "other"
     },
     {
       "item": "Groceries (estimate)",
       "group": "everyday",
-      "amount": "-350"
+      "amount": "-350",
+      "category": "groceries"
     },
     {
       "item": "Amazon orders (estimate)",
       "group": "everyday",
-      "amount": "-300"
+      "amount": "-300",
+      "category": "amazon"
     },
     {
       "item": "Car, fuel, travel (estimate)",
       "group": "everyday",
-      "amount": "-250"
+      "amount": "-250",
+      "category": "car"
     },
     {
       "item": "Eating out / other (estimate)",
       "group": "everyday",
-      "amount": "-150"
+      "amount": "-150",
+      "category": "eating"
     }
   ]
 }

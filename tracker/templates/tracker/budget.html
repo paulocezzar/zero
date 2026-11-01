@@ -11,6 +11,7 @@
   <div class="col-12"><label class="form-label">Line</label>{{ form.item }}</div>
   <div class="col-6"><label class="form-label">Group</label>{{ form.group }}</div>
   <div class="col-6"><label class="form-label">£ a month</label>{{ form.amount }}</div>
+  <div class="col-12"><label class="form-label">Spending category</label>{{ form.category }}<div class="form-text small">Lines you log on Spending are measured against the budget in the same category.</div></div>
   <div class="col-6"><label class="form-label">Day of month (optional)</label>{{ form.pay_day }}</div>
   <div class="col-6"><label class="form-label">Note</label>{{ form.note }}</div>
   <div class="col-12"><button class="btn btn-accent w-100">{% if editing %}Save line{% else %}Add line{% endif %}</button></div>

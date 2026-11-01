@@ -128,6 +128,22 @@
   .alert { border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
   .alert-success { border-color: var(--good); } .alert-info { border-color: var(--accent); } .alert-danger { border-color: var(--bad); }
   a { color: var(--accent); }
+  /* spending rails */
+  .cat { padding: .7rem 0; border-bottom: 1px solid var(--line); }
+  .cat .top { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+  .cat .top .n1 { font-weight: 500; }
+  .cat .top .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: .9rem; white-space: nowrap; }
+  .cat .top .amt .of { color: var(--muted); }
+  .cat .rail { margin-top: .4rem; }
+  .cat.over .rail > i { background: var(--bad); }
+  .cat.nobudget .rail > i { background: var(--muted); }
+  .monthnav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: 0 0 .75rem; }
+  .monthnav h1 { margin: 0; }
+  .monthnav a { color: var(--muted); text-decoration: none; font-size: 1.2rem; padding: .2rem .6rem; border: 1px solid var(--line); border-radius: 999px; }
+  .monthnav a.off { visibility: hidden; }
+  .review td, .review th { vertical-align: middle; }
+  .review .form-select { padding: .2rem 1.6rem .2rem .4rem; font-size: .85rem; }
+  .review tr.seen { opacity: .45; }
   /* bottom nav */
   .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); display: flex; padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 20; }
   .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .15rem; padding: .5rem .1rem .45rem; font-size: .66rem; color: var(--muted); text-decoration: none; }
@@ -163,10 +179,10 @@
 {% if user.is_authenticated %}
 <nav class="bottom-nav" aria-label="Sections">
   <a class="{% if request.resolver_match.url_name == 'overview' %}on{% endif %}" href="{% url 'overview' %}"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+  <a class="{% if request.resolver_match.url_name in 'spending import import_review' %}on{% endif %}" href="{% url 'spending' %}"><svg viewBox="0 0 24 24"><path d="M6 3h12l-1 18H7z"/><path d="M9 8h6"/></svg>Spend</a>
   <a class="{% if request.resolver_match.url_name == 'debts' or request.resolver_match.url_name == 'debt_edit' or request.resolver_match.url_name == 'debt_new' %}on{% endif %}" href="{% url 'debts' %}"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Debts</a>
   <a class="{% if request.resolver_match.url_name == 'payments' %}on{% endif %}" href="{% url 'payments' %}"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8.5c0-1.9 2.2-3 5-3s5 1.1 5 3-2.2 2.5-5 3-5 1.1-5 3 2.2 3 5 3 5-1.1 5-3"/></svg>Pay</a>
-  <a class="{% if request.resolver_match.url_name == 'month' %}on{% endif %}" href="{% url 'month' %}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Month</a>
-  <a class="{% if request.resolver_match.url_name == 'budget' %}on{% endif %}" href="{% url 'budget' %}"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>Budget</a>
+  <a class="{% if request.resolver_match.url_name == 'month' or request.resolver_match.url_name == 'budget' %}on{% endif %}" href="{% url 'month' %}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Month</a>
   <a class="{% if request.resolver_match.url_name == 'projection' %}on{% endif %}" href="{% url 'projection' %}"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Plan</a>
 </nav>
 {% endif %}

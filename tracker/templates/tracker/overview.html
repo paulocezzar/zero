@@ -37,6 +37,9 @@
 <p class="muted">Direct debits; nothing to log. Edit them on <a href="{% url 'budget' %}">Budget</a>. <button type="button" class="btn btn-sm btn-quiet ms-2" id="bills-more" hidden>Show the fortnight</button></p>
 <script>(() => { const later = document.querySelectorAll('#bills .later'); const b = document.getElementById('bills-more'); if (!later.length || !b) return; b.hidden = false; let open = false; b.addEventListener('click', () => { open = !open; later.forEach((r) => r.hidden = !open); b.textContent = open ? 'Just this week' : 'Show the fortnight'; }); })();</script>{% endif %}
 
+<h2 class="d-flex justify-content-between"><span>Spent this month</span><a class="small fw-normal" href="{% url 'spending' %}">Spending</a></h2>
+<p>{% if spent %}<strong class="num {% if everyday_budget and spent > everyday_budget %}bad{% endif %}">{{ spent|gbp }}</strong>{% if everyday_budget %} of {{ everyday_budget|gbp }} everyday budget{% endif %} · {{ days_left }} day{{ days_left|pluralize }} to go{% else %}Nothing logged yet. <a href="{% url 'spending' %}">Log a spend</a> or import a statement.{% endif %}</p>
+{% if spent and everyday_budget %}<div class="rail {% if spent > everyday_budget %}bad{% endif %} mb-3"><i style="width:{% widthratio spent everyday_budget 100 %}%"></i></div>{% endif %}
 {% if last %}<h2>Last check-in · {{ last }}</h2>
 <p>Left over <strong class="num {% if last.left_over < 0 %}bad{% else %}good{% endif %}">{{ last.left_over|gbp }}</strong>{% if last.aqua_balance != None %} · Aqua <span class="num">{{ last.aqua_balance|gbp }}</span>{% endif %}{% if last.starling_on_3rd != None %} · Starling on the 3rd <span class="num">{{ last.starling_on_3rd|gbp }}</span>{% endif %}</p>{% endif %}
 </div>

@@ -11,9 +11,9 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from . import projection
-from .forms import BudgetLineForm, DebtForm, MonthForm, PaymentForm, ProjectionForm, SignupForm
-from .models import BudgetLine, Debt, MonthCheckin, Payment
+from . import projection, spending
+from .forms import BudgetLineForm, DebtForm, ImportForm, MonthForm, OutgoingForm, PaymentForm, ProjectionForm, SignupForm
+from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, Debt, MonthCheckin, Outgoing, Payment
 
 ZERO = Decimal("0")
 
@@ -34,6 +34,41 @@ def budget_totals(user):
 
 def open_debts(user):
     return Debt.objects.filter(owner=user, closed=False)
+
+
+def _month_range(first):
+    nxt = projection.add_months(first, 1)
+    return first, nxt
+
+
+def spent_this_month(user, first=None):
+    first, nxt = _month_range(first or _first_of_month())
+    return Outgoing.objects.filter(owner=user, date__gte=first, date__lt=nxt).aggregate(s=Sum("amount"))["s"] or ZERO
+
+
+def category_rails(user, first):
+    """Per category: budgeted (positive), spent, share, state. A category whose whole budget
+    is lines with a pay day (rent, Sky, phones) is 'fixed': it leaves by direct debit and is
+    shown separately from everyday spending."""
+    first, nxt = _month_range(first)
+    budget, loose = {}, {}
+    for b in BudgetLine.objects.filter(owner=user, amount__lt=0):
+        budget[b.category] = budget.get(b.category, ZERO) - b.amount
+        if b.pay_day is None:
+            loose[b.category] = loose.get(b.category, ZERO) - b.amount
+    spent = {}
+    for o in Outgoing.objects.filter(owner=user, date__gte=first, date__lt=nxt).values("category").annotate(s=Sum("amount")):
+        spent[o["category"]] = o["s"]
+    rails = []
+    for key, label in CATEGORIES:
+        b, sp = budget.get(key, ZERO), spent.get(key, ZERO)
+        if b == 0 and sp == 0:
+            continue
+        pct = int(sp / b * 100) if b > 0 else (100 if sp > 0 else 0)
+        rails.append({"key": key, "label": label, "budget": b, "spent": sp, "left": b - sp, "pct": min(pct, 100), "over": b > 0 and sp > b,
+                      "nobudget": b == 0, "fixed": key != "other" and b > 0 and loose.get(key, ZERO) == 0})
+    rails.sort(key=lambda r: (r["fixed"], -r["spent"], -r["budget"]))
+    return rails
 
 
 # ---------- overview ----------
@@ -78,6 +113,7 @@ def overview(request):
         "interest_total": sum((d.balance for d in interest_debts), ZERO),
         "interest_monthly": sum((d.monthly_interest for d in interest_debts), ZERO),
         "t": t, "due": due, "done": done, "bills": bills, "debts": debts, "plan_clear": plan_clear, "last": last,
+        "spent": sum((r["spent"] for r in category_rails(request.user, _first_of_month()) if not r["fixed"]), ZERO), "everyday_budget": -t["everyday"], "days_left": (projection.add_months(_first_of_month(), 1) - today).days,
         "recent": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:8],
     }
     return render(request, "tracker/overview.html", ctx)
@@ -158,11 +194,13 @@ def month_list(request):
     pk = request.GET.get("edit")
     inst = MonthCheckin.objects.filter(pk=pk, owner=request.user).first() if pk else None
     t = budget_totals(request.user)
-    form = MonthForm(request.POST or None, instance=inst, initial={"month": _first_of_month(), "income": t["income"]})
+    form = MonthForm(request.POST or None, instance=inst, initial={"month": _first_of_month(), "income": t["income"], "everyday": spent_this_month(request.user)})
     if request.method == "POST" and form.is_valid():
         m = form.save(commit=False)
         m.owner = request.user
         m.month = m.month.replace(day=1)
+        if not m.everyday:
+            m.everyday = spent_this_month(request.user, m.month)
         m.left_over = m.income + m.extra_income + t["fixed"] - t["debt_pay"] - m.everyday
         existing = MonthCheckin.objects.filter(owner=request.user, month=m.month).exclude(pk=m.pk).first()
         if existing:
@@ -274,3 +312,95 @@ def signup(request):
         messages.success(request, "Welcome. Start by adding your first debt, then your income and bills on Budget.")
         return redirect("debts")
     return render(request, "tracker/signup.html", {"form": form})
+
+
+# ---------- spending ----------
+
+def _month_param(request):
+    m = request.GET.get("m") or request.POST.get("m") or ""
+    try:
+        y, mo = m.split("-")
+        return date(int(y), int(mo), 1)
+    except (ValueError, AttributeError):
+        return _first_of_month()
+
+
+def spending_view(request):
+    first = _month_param(request)
+    first, nxt = _month_range(first)
+    today = date.today()
+    form = OutgoingForm(request.POST or None, initial={"date": today if first <= today < nxt else first})
+    if request.method == "POST" and form.is_valid():
+        o = form.save(commit=False)
+        o.owner = request.user
+        o.save()
+        messages.success(request, f"Logged {o.merchant or CATEGORY_LABELS[o.category]} £{o.amount}.")
+        return redirect(f"{request.path}?m={o.date:%Y-%m}")
+    items = Outgoing.objects.filter(owner=request.user, date__gte=first, date__lt=nxt)
+    rails = category_rails(request.user, first)
+    everyday = [r for r in rails if not r["fixed"]]
+    fixed = [r for r in rails if r["fixed"]]
+    total = sum((r["spent"] for r in everyday), ZERO)
+    budget = sum((r["budget"] for r in everyday), ZERO)
+    days_left = max(0, (nxt - today).days) if first <= today < nxt else 0
+    ctx = {"form": form, "items": items, "rails": everyday, "fixed": fixed, "fixed_total": sum((r["spent"] for r in fixed), ZERO), "total": total, "budget": budget, "left": budget - total, "days_left": days_left,
+           "first": first, "prev": projection.add_months(first, -1), "next": nxt if nxt <= _first_of_month() else None, "is_current": first == _first_of_month(),
+           "cats": CATEGORIES}
+    return render(request, "tracker/spending.html", ctx)
+
+
+@require_POST
+def outgoing_delete(request, pk):
+    o = get_object_or_404(Outgoing, pk=pk, owner=request.user)
+    m = f"{o.date:%Y-%m}"
+    o.delete()
+    return redirect(f"/spending/?m={m}")
+
+
+def import_view(request):
+    """Step 1: upload. Step 2: review rows held in the session. Step 3: confirm."""
+    if request.method == "POST" and request.POST.get("stage") == "confirm":
+        pending = request.session.get("import_rows") or []
+        source = request.session.get("import_source", "csv")
+        created = skipped = 0
+        existing = set(Outgoing.objects.filter(owner=request.user, import_key__in=[r["key"] for r in pending]).values_list("import_key", flat=True))
+        for i, r in enumerate(pending):
+            if request.POST.get(f"skip-{i}") or r["key"] in existing:
+                skipped += 1
+                continue
+            cat = request.POST.get(f"cat-{i}", r["category"])
+            if cat not in CATEGORY_LABELS:
+                cat = "other"
+            Outgoing.objects.create(owner=request.user, date=date.fromisoformat(r["date"]), amount=Decimal(r["amount"]), category=cat, merchant=r["desc"], note=r.get("ref", ""), source=source, import_key=r["key"])
+            created += 1
+        request.session.pop("import_rows", None)
+        request.session.pop("import_source", None)
+        messages.success(request, f"Imported {created} lines" + (f", skipped {skipped}." if skipped else "."))
+        return redirect("spending")
+
+    form = ImportForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        f = form.cleaned_data["statement"]
+        if f.size > 2_000_000:
+            form.add_error("statement", "That file is over 2 MB. Export a shorter date range.")
+        else:
+            source, rows = spending.parse(f.read(), request.user.id)
+            if not rows:
+                form.add_error("statement", "No spending lines found. Zero reads Starling and Aqua CSV exports, or any CSV with date, description and amount columns.")
+            else:
+                existing = set(Outgoing.objects.filter(owner=request.user, import_key__in=[r["key"] for r in rows]).values_list("import_key", flat=True))
+                rows = [dict(r, date=r["date"].isoformat(), amount=str(r["amount"]), seen=r["key"] in existing) for r in rows][:400]
+                request.session["import_rows"] = rows
+                request.session["import_source"] = source
+                return redirect("import_review")
+    return render(request, "tracker/import.html", {"form": form})
+
+
+def import_review(request):
+    rows = request.session.get("import_rows")
+    if not rows:
+        return redirect("import")
+    source = request.session.get("import_source", "csv")
+    new = [r for r in rows if not r["seen"]]
+    return render(request, "tracker/import_review.html", {"rows": rows, "source": source, "cats": CATEGORIES, "new_count": len(new), "seen_count": len(rows) - len(new),
+                  "total": sum((Decimal(r["amount"]) for r in new if not r["skip"]), ZERO)})

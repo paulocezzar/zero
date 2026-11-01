@@ -72,6 +72,14 @@ class Payment(models.Model):
         return f"{self.date} {self.debt} £{self.amount}"
 
 
+CATEGORIES = [
+    ("groceries", "Groceries"), ("amazon", "Amazon & shopping"), ("car", "Car & fuel"), ("eating", "Eating out"),
+    ("home", "Home & bills"), ("tech", "Phones & tech"), ("subs", "Subscriptions"), ("family", "Family"),
+    ("savings", "Savings"), ("cash", "Cash"), ("health", "Health"), ("kids", "Kids"), ("fun", "Fun & days out"), ("other", "Other"),
+]
+CATEGORY_LABELS = dict(CATEGORIES)
+
+
 class BudgetLine(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="budget_lines")
     GROUPS = [
@@ -82,6 +90,7 @@ class BudgetLine(models.Model):
     group = models.CharField(max_length=10, choices=GROUPS, default="other")
     amount = models.DecimalField("£ per month (income positive, costs negative)", max_digits=9, decimal_places=2)
     pay_day = models.PositiveSmallIntegerField("Day of month", null=True, blank=True, help_text="When it leaves (1–28); blank for spread-out spending like groceries")
+    category = models.CharField(max_length=12, choices=CATEGORIES, default="other", help_text="Spending is compared against the budget by category")
     note = models.CharField(max_length=120, blank=True)
 
     class Meta:
@@ -108,3 +117,24 @@ class MonthCheckin(models.Model):
 
     def __str__(self):
         return self.month.strftime("%b %Y")
+
+
+class Outgoing(models.Model):
+    """One thing that left: a card line, a cash spend, a one-off."""
+    SOURCES = [("manual", "Logged by hand"), ("starling", "Starling import"), ("aqua", "Aqua import"), ("csv", "CSV import")]
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="outgoings")
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=9, decimal_places=2)
+    category = models.CharField(max_length=12, choices=CATEGORIES, default="other")
+    merchant = models.CharField(max_length=80, blank=True)
+    note = models.CharField(max_length=120, blank=True)
+    source = models.CharField(max_length=10, choices=SOURCES, default="manual")
+    import_key = models.CharField(max_length=64, blank=True, db_index=True, help_text="Hash of the statement line, so a re-import skips it")
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-created"]
+        constraints = [models.UniqueConstraint(fields=["owner", "import_key"], condition=models.Q(import_key__gt=""), name="one_import_per_line")]
+
+    def __str__(self):
+        return f"{self.date} {self.merchant or self.note} £{self.amount}"
