@@ -28,7 +28,8 @@
   :root[data-theme="dark"] { --paper: #121817; --card: #1a2120; --ink: #e9ece7; --muted: #98a19d; --line: #2c3634; --rail: #263230; --accent: #62b8b1; --accent-ink: #0d1a19; --good: #78c58e; --bad: #ef8079; --warn: #e3b24a; color-scheme: dark; }
   /* privacy: amounts blur until revealed */
   body.priv .big, body.priv .bal, body.priv .amt, body.priv .fact .v, body.priv .n2.num, body.priv .row-item .amt, body.priv .pct, body.priv .meta, body.priv .sub,
-  body.priv .road .seg .b, body.priv .road .seg .n, body.priv .card .v, body.priv .card .muted.small, body.priv .due-head .num, body.priv .cat .of, body.priv .tier, body.priv .t-amt, body.priv .cd-days, body.priv .hero-date .small, body.priv .chip .num, body.priv .table td.num, body.priv .review td { filter: blur(7px); user-select: none; }
+  body.priv .road .seg .b, body.priv .road .seg .n, body.priv .card .v, body.priv .card .muted.small, body.priv .due-head .num, body.priv .cat .of, body.priv .tier, body.priv .t-amt, body.priv .cd-days, body.priv .hero-date .small, body.priv .chip .num, body.priv .table td.num, body.priv .review td { filter: blur(.45em); user-select: none; }
+  body.priv .big, body.priv .hero-date .when-big, body.priv .card .v { filter: blur(.6em); }
   .top .icons { display: flex; gap: .25rem; align-items: center; }
   .iconbtn { width: 2.4rem; height: 2.4rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
   .iconbtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
