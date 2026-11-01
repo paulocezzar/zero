@@ -48,11 +48,24 @@ class Debt(models.Model):
 
     @property
     def months_left(self):
+        """Months to clear at the current payment, interest included. None if it never clears."""
         if self.balance <= 0:
             return 0
         if self.monthly <= 0:
             return None
-        return int(-(-self.balance // self.monthly))
+        if not self.apr:
+            return int(-(-self.balance // self.monthly))
+        from .projection import simulate
+        from datetime import date
+        s = simulate([self], start=date.today().replace(day=1), planned=False).debts[0]
+        if s.clear is None:
+            return None
+        d = date.today().replace(day=1)
+        return (s.clear.year - d.year) * 12 + s.clear.month - d.month
+
+    @property
+    def never_clears(self):
+        return self.balance > 0 and self.monthly > 0 and self.months_left is None
 
     @property
     def in_promo(self):

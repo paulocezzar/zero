@@ -189,7 +189,7 @@ def overview(request):
         "no_apr": [d for d in debts if d.kind == "card" and d.apr == 0 and d.balance > 0],
         "t": t, "due": due, "groups": groups, "done": done, "bills": bills, "debts": debts, "plan_clear": plan_clear, "asis_clear": asis_clear, "last": last,
         "next_win": next_win, "streak": paid_streak(request.user, debts),
-        "spent": spent, "everyday_budget": -t["everyday"], "days_left": (projection.add_months(first, 1) - today).days, "rails": rails[:5],
+        "spent": spent, "everyday_budget": sum((r["budget"] for r in rails), ZERO), "days_left": (projection.add_months(first, 1) - today).days, "rails": rails[:5],
         "recent": Payment.objects.filter(debt__owner=request.user).select_related("debt")[:6],
     }
     return render(request, "tracker/overview.html", ctx)

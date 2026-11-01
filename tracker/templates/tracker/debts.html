@@ -6,7 +6,7 @@
 {% for d in debts %}
   <div class="debt {% if d.closed %}opacity-50{% endif %}">
     <div class="head"><a class="name" href="{% url 'debt_edit' d.pk %}">{{ d.name }} <span class="tag {% if d.apr %}int{% elif d.kind == 'family' %}fam{% endif %}">{{ d.get_kind_display }}{% if d.apr %} · {{ d.apr }}%{% endif %}</span>{% if d.closed %} <span class="tag">closed</span>{% endif %}</a><div class="bal">{{ d.balance|gbp:2 }}</div></div>
-    <div class="meta"><span>{{ d.monthly|gbp }} on day {{ d.pay_day }}</span>{% with m=d.months_left %}{% if m is not None %}<span>{{ m }} months left</span>{% endif %}{% endwith %}{% if d.note %}<span class="d-none d-md-inline">{{ d.note }}</span>{% endif %}</div>
+    <div class="meta"><span>{{ d.monthly|gbp }} on day {{ d.pay_day }}</span>{% with m=d.months_left %}{% if m is not None %}<span>{{ m }} months left</span>{% elif d.never_clears %}<span class="bad">never clears — interest {{ d.monthly_interest|gbp }}/mo beats the payment</span>{% endif %}{% endwith %}{% if d.note %}<span class="d-none d-md-inline">{{ d.note }}</span>{% endif %}</div>
     <div class="rail {% if d.apr %}bad{% endif %}"><i style="width: {{ d.progress }}%"></i></div>
     <div class="foot">
       <div class="pct">{{ d.progress }}% paid of {{ d.starting_balance|gbp }}</div>
