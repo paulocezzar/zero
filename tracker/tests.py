@@ -361,3 +361,20 @@ class OpenSignupTests(TestCase):
             r = self.client.post(reverse("signup"), {"username": "new", "email": "", "password1": "a-long-passw0rd", "password2": "a-long-passw0rd", "agree": "on"})
             self.assertRedirects(r, reverse("overview"))
             self.assertEqual(Consent.objects.get(owner__username="new").terms_version, "2026-11-01")
+
+
+class RecatTests(TestCase):
+    def test_recategorise_and_remember(self):
+        u = get_user_model().objects.create_user("p", password="x" * 12)
+        self.client.force_login(u)
+        o = Outgoing.objects.create(owner=u, date=date.today(), amount=Decimal("50"), category="other", merchant="LYDFORD")
+        r = self.client.post(reverse("outgoing_recat", args=[o.pk]), {"category": "eating"})
+        self.assertEqual(r.status_code, 302)
+        o.refresh_from_db(); self.assertEqual(o.category, "eating")
+        from .models import MerchantRule
+        self.assertEqual(MerchantRule.objects.get(owner=u, merchant="LYDFORD").category, "eating")
+        csv = "Date,Description,Note,Amount(GBP)\n27/10/2026,LYDFORD,LYDFORD SOMERTON,50.01\n24/10/2026,PAYMENT RECEIVED - THANK YOU,,-300\n"
+        f = SimpleUploadedFile("aqua.csv", csv.encode(), content_type="text/csv")
+        self.client.post(reverse("import"), {"statement": f})
+        rows = self.client.session["import_rows"]
+        self.assertEqual([x["category"] for x in rows if x["desc"] == "LYDFORD"], ["eating"])

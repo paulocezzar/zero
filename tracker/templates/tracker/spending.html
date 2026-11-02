@@ -48,8 +48,10 @@
 </div>{% endfor %}</div></details>{% endif %}
 </div><div class="col-side">
 <h2>Lines</h2>
-{% if items %}<div class="list">{% for o in items %}
-<div class="row-item"><div class="who"><div class="n1">{{ o.merchant|default:o.get_category_display }}</div><div class="n2">{{ o.date|date:"j M" }} · {{ o.get_category_display }}{% if o.note %} · {{ o.note }}{% endif %}{% if o.source != 'manual' %} · {{ o.get_source_display|lower }}{% endif %}</div></div><div class="amt">{{ o.amount|gbp:2 }}</div><div class="acts"><form method="post" action="{% url 'outgoing_delete' o.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" aria-label="Remove">×</button></form></div></div>
+{% if items %}<p class="muted small mb-1">Change a category here and Zero remembers it for that shop next time.</p><div class="list">{% for o in items %}
+<div class="row-item"><div class="who"><div class="n1">{{ o.merchant|default:o.get_category_display }}</div><div class="n2">{{ o.date|date:"j M" }}{% if o.note %} · {{ o.note|truncatechars:40 }}{% endif %}{% if o.source != 'manual' %} · {{ o.get_source_display|lower }}{% endif %}</div>
+  <form method="post" action="{% url 'outgoing_recat' o.pk %}" class="recat">{% csrf_token %}<select name="category" class="form-select form-select-sm" aria-label="Category for {{ o.merchant }}" onchange="this.form.requestSubmit()">{% for k, l in cats %}<option value="{{ k }}" {% if k == o.category %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></form></div>
+  <div class="amt">{{ o.amount|gbp:2 }}</div><div class="acts"><form method="post" action="{% url 'outgoing_delete' o.pk %}">{% csrf_token %}<button class="btn btn-sm btn-quiet btn-icon" aria-label="Remove">×</button></form></div></div>
 {% endfor %}</div>{% else %}<p class="muted">No lines for {{ first|date:"F" }}.</p>{% endif %}
 </div></div>
 {% endblock %}

@@ -217,3 +217,13 @@ class LoginAttempt(models.Model):
     failures = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
     updated = models.DateTimeField(auto_now=True)
+
+
+class MerchantRule(models.Model):
+    """A category the user chose for a merchant once; applied to that merchant on every later import."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="merchant_rules")
+    merchant = models.CharField(max_length=80)
+    category = models.CharField(max_length=12, choices=CATEGORIES)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["owner", "merchant"], name="one_rule_per_merchant")]

@@ -25,6 +25,7 @@ urlpatterns = [
     path("payments/<int:pk>/undo/", views.payment_undo, name="payment_undo"),
     path("spending/", views.spending_view, name="spending"),
     path("spending/<int:pk>/delete/", views.outgoing_delete, name="outgoing_delete"),
+    path("spending/<int:pk>/category/", views.outgoing_recat, name="outgoing_recat"),
     path("spending/import/", views.import_view, name="import"),
     path("spending/import/review/", views.import_review, name="import_review"),
     path("month/", views.month_list, name="month"),

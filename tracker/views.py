@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from . import projection, spending
 from .forms import BudgetLineForm, DebtForm, ImportForm, MonthForm, OfferForm, OutgoingForm, PaymentForm, ProjectionForm, SignupForm
-from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Consent, Debt, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
+from .models import CATEGORIES, CATEGORY_LABELS, BudgetLine, CalendarToken, Consent, Debt, MerchantRule, MonthCheckin, Outgoing, Payment, SettlementOffer, Snapshot
 
 ZERO = Decimal("0")
 
@@ -675,6 +675,19 @@ def spending_view(request):
 
 
 @require_POST
+def outgoing_recat(request, pk):
+    """Change one line's category in place; remember the merchant so the next import lands right."""
+    o = get_object_or_404(Outgoing, pk=pk, owner=request.user)
+    cat = request.POST.get("category")
+    if cat in CATEGORY_LABELS:
+        o.category = cat
+        o.save(update_fields=["category"])
+        if o.merchant:
+            MerchantRule.objects.update_or_create(owner=request.user, merchant=o.merchant.strip().upper()[:80], defaults={"category": cat})
+    return redirect(f"/spending/?m={o.date:%Y-%m}")
+
+
+@require_POST
 def outgoing_delete(request, pk):
     o = get_object_or_404(Outgoing, pk=pk, owner=request.user)
     m = f"{o.date:%Y-%m}"
@@ -714,6 +727,11 @@ def import_view(request):
                 form.add_error("statement", "No spending lines found. Zero reads most UK bank and card CSV exports — any file with date, description and amount columns.")
             else:
                 existing = set(Outgoing.objects.filter(owner=request.user, import_key__in=[r["key"] for r in rows]).values_list("import_key", flat=True))
+                learned = dict(MerchantRule.objects.filter(owner=request.user).values_list("merchant", "category"))
+                for r in rows:
+                    cat = learned.get(r["desc"].strip().upper()[:80])
+                    if cat and not r["skip"]:
+                        r["category"] = cat
                 rows = [dict(r, date=r["date"].isoformat(), amount=str(r["amount"]), seen=r["key"] in existing) for r in rows][:400]
                 request.session["import_rows"] = rows
                 request.session["import_source"] = source
