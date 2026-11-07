@@ -1,0 +1,24 @@
+{
+  "updates": [
+    {
+      "id": "2026-11-07-virgin-v12",
+      "user": "paulo",
+      "edit_debts": [
+        {"match": "Aqua", "set": {"balance": "1985.37", "priority": 0}, "note": "Remainder after Virgin BT (£4,350 moved 6 Nov 2026). Still 39.94% — the only interest left."}
+      ],
+      "new_debts": [
+        {"name": "Virgin Money (0% transfer)", "kind": "card", "balance": "4502.25", "monthly": "250", "apr": "27.9", "promo_until": "2029-02-01", "pay_day": 1,
+         "note": "£4,350 transferred from Aqua + £152.25 fee. 0% to Feb 2029, 27.9% after. Fixed £250 DD from Starling clears it in 18 months."}
+      ],
+      "settle": [
+        {"match": "V12", "date": "2026-11-07", "amount": "543.99", "note": "ACI ref 2044014 — 60% reduction on £1,359.98 (Intrum). Paid online from Starling. Chase settlement letter if none by 21 Nov."}
+      ],
+      "edit_budget": [
+        {"match": "Car, fuel, travel", "set": {"item": "Petrol (estimate)", "amount": "-200", "category": "fuel"}}
+      ],
+      "new_budget": [
+        {"item": "Car & travel (parking, trains, repairs)", "group": "everyday", "category": "car", "amount": "-80"}
+      ]
+    }
+  ]
+}

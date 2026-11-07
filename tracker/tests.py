@@ -378,3 +378,27 @@ class RecatTests(TestCase):
         self.client.post(reverse("import"), {"statement": f})
         rows = self.client.session["import_rows"]
         self.assertEqual([x["category"] for x in rows if x["desc"] == "LYDFORD"], ["eating"])
+
+
+class ApplyUpdatesTests(TestCase):
+    def test_runs_once_and_applies(self):
+        from django.core.management import call_command
+        from io import StringIO
+        u = get_user_model().objects.create_user("paulo", password="x" * 12)
+        aqua = Debt.objects.create(owner=u, name="Aqua credit card", kind="card", balance=Decimal("6435.29"), monthly=Decimal("200"), apr=Decimal("39.94"), priority=0)
+        v12 = Debt.objects.create(owner=u, name="V12 Retail Finance (ACI)", kind="collector", balance=Decimal("1359.98"), monthly=Decimal("30"), priority=4)
+        BudgetLine.objects.create(owner=u, item="Car, fuel, travel (estimate)", group="everyday", category="car", amount=Decimal("-250"))
+        out = StringIO(); call_command("apply_updates", stdout=out)
+        self.assertIn("applied", out.getvalue())
+        aqua.refresh_from_db(); v12.refresh_from_db()
+        self.assertEqual(aqua.balance, Decimal("1985.37"))
+        self.assertTrue(v12.closed); self.assertEqual(v12.balance, Decimal("0"))
+        self.assertEqual(Payment.objects.get(debt=v12).amount, Decimal("543.99"))
+        virgin = Debt.objects.get(owner=u, name__startswith="Virgin")
+        self.assertEqual(virgin.balance, Decimal("4502.25")); self.assertTrue(virgin.in_promo)
+        self.assertEqual(BudgetLine.objects.get(owner=u, item="Petrol (estimate)").category, "fuel")
+        self.assertTrue(BudgetLine.objects.filter(owner=u, category="car", amount=Decimal("-80")).exists())
+        out = StringIO(); call_command("apply_updates", stdout=out)
+        self.assertIn("already applied", out.getvalue())
+        self.assertEqual(Debt.objects.filter(owner=u, name__startswith="Virgin").count(), 1)
+        self.assertEqual(Payment.objects.filter(debt=v12).count(), 1)
